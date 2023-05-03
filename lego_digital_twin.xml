@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
+<nta>
+	<declaration>// Place global declarations here.
+clock x;
+
+typedef struct{
+    int f_out;
+    int s_out;
+    bool control_flow;
+}belt_config;
+ 
+ const int BELTS = 2;
+ const int BELT_SPEED = 1;
+ const int MAX_SLOTS = 32;
+ 
+ int BELT_SLOTS[BELTS] = {4, 5};
+ int BELT_ITEMS[BELTS] = {4, 1};
+ 
+ belt_config CONFIG[BELTS] = {
+     {1, 0, false},
+     {0, 0, false}
+ };
+ 
+ typedef int[0, BELTS-1] belt_t;
+ 
+ broadcast chan init_done, belt_move;
+ urgent chan piece[BELTS];</declaration>
+	<template>
+		<name>Initializer</name>
+		<location id="id0" x="-170" y="-8">
+			<name x="-221" y="-42">init_start</name>
+			<committed/>
+		</location>
+		<location id="id1" x="8" y="-8">
+			<name x="-25" y="-42">belt_sync</name>
+			<label kind="invariant" x="17" y="0">x &lt;= 1/BELT_SPEED</label>
+		</location>
+		<init ref="id0"/>
+		<transition id="id2">
+			<source ref="id1"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="8" y="76">belt_move!</label>
+			<nail x="8" y="76"/>
+			<nail x="93" y="76"/>
+			<nail x="93" y="-8"/>
+		</transition>
+		<transition id="id3">
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="-127" y="-34">init_done!</label>
+		</transition>
+	</template>
+	<template>
+		<name x="5" y="5">Conveyor_Belt</name>
+		<parameter>belt_t id</parameter>
+		<declaration>// Place local declarations here.
+int slots[MAX_SLOTS];
+int flow_counter;
+bool out_ready;
+
+void build() {
+    int i;
+    
+    for (i = 0; i &lt; BELT_ITEMS[id]; i++) {
+        slots[i] = 1;
+    }
+    
+    flow_counter = 0;
+}
+
+void move() {
+    int i;
+    out_ready = slots[0];
+    
+    if ( slots[0] ) {
+        flow_counter = flow_counter % 2;
+        flow_counter++;
+    }
+    
+    for ( i = 1; i &lt;= BELT_SLOTS[id]; i++) {
+        slots[i-1] = slots[i];
+    }
+    
+    slots[i] = 0;
+}
+
+void add_last() {
+    slots[BELT_SLOTS[id]-1] = 1;
+}
+
+int send_to() {
+    if ( CONFIG[id].control_flow &amp;&amp; flow_counter == 2) {
+        
+        return CONFIG[id].s_out;
+    }
+    
+    return CONFIG[id].f_out;
+}</declaration>
+		<location id="id4" x="-518" y="-161">
+			<name x="-544" y="-195">start</name>
+		</location>
+		<location id="id5" x="-237" y="-161">
+			<name x="-306" y="-204">working</name>
+		</location>
+		<location id="id6" x="-238" y="-34">
+			<name x="-263" y="-17">moving</name>
+			<committed/>
+		</location>
+		<init ref="id4"/>
+		<transition id="id7">
+			<source ref="id6"/>
+			<target ref="id6"/>
+			<label kind="synchronisation" x="-280" y="25">piece[id]?</label>
+			<label kind="assignment" x="-280" y="51">add_last()</label>
+			<nail x="-307" y="50"/>
+			<nail x="-163" y="50"/>
+		</transition>
+		<transition id="id8">
+			<source ref="id6"/>
+			<target ref="id5"/>
+			<label kind="guard" x="-144" y="-110">out_ready</label>
+			<label kind="synchronisation" x="-144" y="-93">piece[send_to()]!</label>
+			<label kind="assignment" x="-144" y="-68">out_ready = 0</label>
+			<nail x="-161" y="-102"/>
+		</transition>
+		<transition id="id9">
+			<source ref="id6"/>
+			<target ref="id5"/>
+			<label kind="guard" x="-272" y="-110">!out_ready</label>
+		</transition>
+		<transition id="id10">
+			<source ref="id5"/>
+			<target ref="id6"/>
+			<label kind="synchronisation" x="-382" y="-119">belt_move?</label>
+			<label kind="assignment" x="-382" y="-102">move()</label>
+			<nail x="-298" y="-98"/>
+		</transition>
+		<transition id="id11">
+			<source ref="id5"/>
+			<target ref="id5"/>
+			<label kind="synchronisation" x="-187" y="-306">piece[id]?</label>
+			<label kind="assignment" x="-170" y="-289">add_last()</label>
+			<nail x="-264" y="-302"/>
+			<nail x="-120" y="-243"/>
+		</transition>
+		<transition id="id12">
+			<source ref="id4"/>
+			<target ref="id5"/>
+			<label kind="synchronisation" x="-434" y="-183">init_done?</label>
+			<label kind="assignment" x="-433" y="-161">build()</label>
+		</transition>
+	</template>
+	<system>// Place template instantiations here.
+I = Initializer();
+system I, Conveyor_Belt;
+</system>
+	<queries>
+		<query>
+			<formula/>
+			<comment/>
+		</query>
+	</queries>
+</nta>
