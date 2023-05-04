@@ -2,7 +2,7 @@
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
 <nta>
 	<declaration>// Place global declarations here.
-clock x;
+
 
 typedef struct{
     int f_out;
@@ -25,68 +25,73 @@ typedef struct{
  typedef int[0, BELTS-1] belt_t;
  
  broadcast chan init_done, belt_move;
- urgent chan piece[BELTS];</declaration>
+ urgent chan piece[BELTS];
+
+int belts[BELTS][MAX_SLOTS];</declaration>
 	<template>
 		<name>Initializer</name>
+		<declaration>clock x;</declaration>
 		<location id="id0" x="-170" y="-8">
 			<name x="-221" y="-42">init_start</name>
 			<committed/>
 		</location>
-		<location id="id1" x="8" y="-8">
-			<name x="-25" y="-42">belt_sync</name>
-			<label kind="invariant" x="17" y="0">x &lt;= 1/BELT_SPEED</label>
+		<location id="id1" x="59" y="-8">
+			<name x="25" y="-59">belt_sync</name>
+			<label kind="invariant" x="0" y="-42">x &lt;= 1/BELT_SPEED</label>
 		</location>
 		<init ref="id0"/>
 		<transition id="id2">
 			<source ref="id1"/>
 			<target ref="id1"/>
-			<label kind="synchronisation" x="8" y="76">belt_move!</label>
-			<nail x="8" y="76"/>
-			<nail x="93" y="76"/>
-			<nail x="93" y="-8"/>
+			<label kind="guard" x="42" y="76">x &gt;= 1/BELT_SPEED</label>
+			<label kind="synchronisation" x="59" y="93">belt_move!</label>
+			<label kind="assignment" x="85" y="110">x=0</label>
+			<nail x="59" y="76"/>
+			<nail x="144" y="76"/>
+			<nail x="144" y="-8"/>
 		</transition>
 		<transition id="id3">
 			<source ref="id0"/>
 			<target ref="id1"/>
-			<label kind="synchronisation" x="-127" y="-34">init_done!</label>
+			<label kind="synchronisation" x="-110" y="-34">init_done!</label>
+			<label kind="assignment" x="-102" y="-8">x = 0</label>
 		</transition>
 	</template>
 	<template>
 		<name x="5" y="5">Conveyor_Belt</name>
 		<parameter>belt_t id</parameter>
 		<declaration>// Place local declarations here.
-int slots[MAX_SLOTS];
 int flow_counter;
 bool out_ready;
 
 void build() {
     int i;
     
-    for (i = 0; i &lt; BELT_ITEMS[id]; i++) {
-        slots[i] = 1;
+    for (i = 0; i &lt; BELT_ITEMS[id]; i++) { //slot 0 è il piu avanzato
+        belts[id][i] = 1;
     }
     
-    flow_counter = 0;
+    flow_counter = 0; //to implement rule for green bar
 }
 
 void move() {
     int i;
-    out_ready = slots[0];
+    //out_ready = belts[id][0];
     
-    if ( slots[0] ) {
-        flow_counter = flow_counter % 2;
+    if ( belts[id][0] ) {
+        flow_counter = flow_counter % 2;    //??
         flow_counter++;
     }
     
     for ( i = 1; i &lt;= BELT_SLOTS[id]; i++) {
-        slots[i-1] = slots[i];
+        belts[id][i-1] = slots[i];
     }
     
-    slots[i] = 0;
+    belts[id][i-1] = 0;    //BELT_SLOTS[id]-1 quindi sempre ultimo slot
 }
 
 void add_last() {
-    slots[BELT_SLOTS[id]-1] = 1;
+    belts[id][BELT_SLOTS[id]-1] = 1;
 }
 
 int send_to() {
@@ -101,7 +106,7 @@ int send_to() {
 			<name x="-544" y="-195">start</name>
 		</location>
 		<location id="id5" x="-237" y="-161">
-			<name x="-306" y="-204">working</name>
+			<name x="-306" y="-195">working</name>
 		</location>
 		<location id="id6" x="-238" y="-34">
 			<name x="-263" y="-17">moving</name>
@@ -111,18 +116,19 @@ int send_to() {
 		<transition id="id7">
 			<source ref="id6"/>
 			<target ref="id6"/>
+			<label kind="guard" x="-93" y="-76">out_ready</label>
+			<label kind="synchronisation" x="-85" y="-51">piece[send_to()]!</label>
+			<label kind="assignment" x="-85" y="-25">out_ready=0</label>
+			<nail x="-93" y="25"/>
+			<nail x="-110" y="-93"/>
+		</transition>
+		<transition id="id8">
+			<source ref="id6"/>
+			<target ref="id6"/>
 			<label kind="synchronisation" x="-280" y="25">piece[id]?</label>
 			<label kind="assignment" x="-280" y="51">add_last()</label>
 			<nail x="-307" y="50"/>
 			<nail x="-163" y="50"/>
-		</transition>
-		<transition id="id8">
-			<source ref="id6"/>
-			<target ref="id5"/>
-			<label kind="guard" x="-144" y="-110">out_ready</label>
-			<label kind="synchronisation" x="-144" y="-93">piece[send_to()]!</label>
-			<label kind="assignment" x="-144" y="-68">out_ready = 0</label>
-			<nail x="-161" y="-102"/>
 		</transition>
 		<transition id="id9">
 			<source ref="id6"/>
@@ -137,18 +143,97 @@ int send_to() {
 			<nail x="-298" y="-98"/>
 		</transition>
 		<transition id="id11">
-			<source ref="id5"/>
-			<target ref="id5"/>
-			<label kind="synchronisation" x="-187" y="-306">piece[id]?</label>
-			<label kind="assignment" x="-170" y="-289">add_last()</label>
-			<nail x="-264" y="-302"/>
-			<nail x="-120" y="-243"/>
-		</transition>
-		<transition id="id12">
 			<source ref="id4"/>
 			<target ref="id5"/>
 			<label kind="synchronisation" x="-434" y="-183">init_done?</label>
 			<label kind="assignment" x="-433" y="-161">build()</label>
+		</transition>
+	</template>
+	<template>
+		<name>Sensor</name>
+		<parameter>int belt_id, int belt_slot</parameter>
+		<declaration>
+
+bool checkOccupied() {
+    return belts[belt_id][belt_slot];
+}
+</declaration>
+		<location id="id12" x="-297" y="-68">
+		</location>
+		<location id="id13" x="-161" y="-229">
+			<name x="-195" y="-263">Signal_off</name>
+		</location>
+		<location id="id14" x="-161" y="51">
+			<name x="-195" y="68">Signal_on</name>
+		</location>
+		<location id="id15" x="-161" y="-68">
+			<name x="-144" y="-85">check</name>
+		</location>
+		<init ref="id12"/>
+		<transition id="id16">
+			<source ref="id15"/>
+			<target ref="id14"/>
+			<label kind="guard" x="-348" y="0">checkOccupied()</label>
+			<nail x="-221" y="-8"/>
+		</transition>
+		<transition id="id17">
+			<source ref="id15"/>
+			<target ref="id13"/>
+			<label kind="guard" x="-365" y="-178">!checkOccupied()</label>
+			<nail x="-246" y="-144"/>
+		</transition>
+		<transition id="id18">
+			<source ref="id12"/>
+			<target ref="id15"/>
+			<label kind="synchronisation" x="-279" y="-85">init_done?</label>
+		</transition>
+		<transition id="id19">
+			<source ref="id14"/>
+			<target ref="id15"/>
+			<label kind="synchronisation" x="-161" y="-25">belt_move?</label>
+		</transition>
+		<transition id="id20">
+			<source ref="id13"/>
+			<target ref="id15"/>
+			<label kind="synchronisation" x="-161" y="-165">belt_move?</label>
+		</transition>
+	</template>
+	<template>
+		<name>Station</name>
+		<parameter>station_t id, int processing_time, belt_t belt_id</parameter>
+		<declaration>clock x;
+
+bool busy;</declaration>
+		<location id="id21" x="-280" y="-110">
+		</location>
+		<location id="id22" x="-110" y="-110">
+			<name x="-120" y="-144">ready</name>
+		</location>
+		<location id="id23" x="-102" y="17">
+			<name x="-68" y="8">processing</name>
+			<label kind="invariant" x="-178" y="34">x&lt;=processing_time</label>
+		</location>
+		<init ref="id21"/>
+		<transition id="id24">
+			<source ref="id23"/>
+			<target ref="id22"/>
+			<label kind="guard" x="-323" y="-68">x&gt;=processing_time</label>
+			<label kind="synchronisation" x="-297" y="-51">piece[belt_id]!</label>
+			<nail x="-161" y="-17"/>
+			<nail x="-161" y="-68"/>
+		</transition>
+		<transition id="id25">
+			<source ref="id22"/>
+			<target ref="id23"/>
+			<label kind="synchronisation" x="-51" y="-68">input_ready[id]?</label>
+			<label kind="assignment" x="-51" y="-51">x=0</label>
+			<nail x="-51" y="-85"/>
+			<nail x="-51" y="-17"/>
+		</transition>
+		<transition id="id26">
+			<source ref="id21"/>
+			<target ref="id22"/>
+			<label kind="synchronisation" x="-262" y="-127">init_done?</label>
 		</transition>
 	</template>
 	<system>// Place template instantiations here.
