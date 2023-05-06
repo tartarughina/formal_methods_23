@@ -18,19 +18,25 @@ const int MAX_SPEED = 5;
 int BELT_SLOTS[BELTS] = {4, 5};
 int BELT_ITEMS[BELTS] = {4, 1};
  
-typedef int[0, BELTS-1] belt_t;
-typedef int[0, STATIONS-1] station_t;
+typedef int[0, BELTS-1] belt_t; 
+typedef int[0, STATIONS+MERGERS+FLOW_CONTROLLERS-1] station_t;
 typedef int[0, HEAD_SENSORS-1] head_sensor_t;
 typedef int[0, TAIL_SENSORS-1] tail_sensor_t;
 typedef int[0, 32] proc_time_t;
-typedef int[0, MAX_SLOTS] pos_t;
-typedef int[0, MERGERS] merger_t;
-typedef int[0, FLOW_CONTROLLERS] flow_ctrl_t;
+typedef int[0, MAX_SLOTS-1] pos_t;
+
+// It's correct to define an id for the merger and the flow controller but there's a problem
+// You are going to have a duplicate when using the channel pushed_to_stat because you have 
+// id: 0 for the station, the merger and the flow controller
+// SOLUTION: everything is a station to the belt, what it actually does must be transparent to it
+
+//typedef int[0, MERGERS-1] merger_t;
+//typedef int[0, FLOW_CONTROLLERS-1] flow_ctrl_t;
 
 broadcast chan init_done, belt_move;
 chan belt_in[BELTS];
 chan station_in[STATIONS];
-chan belt_moved[TOTAL_SENSORS];
+chan belt_moved[BELTS];
 chan pushed_to_belt[BELTS];
 chan pushed_to_stat[STATIONS + MERGERS + FLOW_CONTROLLERS];
 chan free[STATIONS];
@@ -434,8 +440,7 @@ bool has_tail_sensor() {
 		<transition id="id52">
 			<source ref="id49"/>
 			<target ref="id50"/>
-			<label kind="synchronisation" x="59" y="-348">pushed_to_belt[belt_id]!</label>
-			<label kind="assignment" x="135" y="-331">pop()</label>
+			<label kind="synchronisation" x="59" y="-331">pushed_to_belt[belt_id]!</label>
 		</transition>
 		<transition id="id53">
 			<source ref="id48"/>
