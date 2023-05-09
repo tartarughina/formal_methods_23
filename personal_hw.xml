@@ -49,6 +49,7 @@ int FLOW_OUTPUTS[2] = {3, 4};</declaration>
 		</location>
 		<location id="id3" x="-8" y="195">
 			<name x="8" y="161">offload_station</name>
+			<committed/>
 		</location>
 		<location id="id4" x="306" y="195">
 			<name x="331" y="187">hold_station</name>
@@ -412,8 +413,10 @@ void move_belt() {
     move_head();
     
     if (gate[id]) {
-        belts[id][head-1] = belts[id][head];
-        belts[id][head] = 0;
+        if (belts[id][head-1] == 0) {
+            belts[id][head-1] = belts[id][head];
+            belts[id][head] = 0;
+        }
     }
     
     move_tail();
