@@ -160,7 +160,7 @@ int FLOW_OUTPUTS[2] = {3, 4};</declaration>
 		<transition id="id21">
 			<source ref="id16"/>
 			<target ref="id16"/>
-			<label kind="guard" x="-51" y="42">!belts[belt][pos]</label>
+			<label kind="guard" x="-51" y="42">!belts[belt][pos-1]</label>
 			<label kind="synchronisation" x="-51" y="59">move[belt]?</label>
 			<nail x="-34" y="34"/>
 			<nail x="51" y="34"/>
