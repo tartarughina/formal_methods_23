@@ -454,44 +454,51 @@ void add_last() {
 		</location>
 		<location id="id59" x="280" y="-59">
 			<name x="187" y="-84">gate_open</name>
-			<label kind="invariant" x="136" y="-101">x &lt;= BELT_SPEED</label>
 		</location>
 		<location id="id60" x="51" y="-59">
 			<name x="-17" y="-68">moving</name>
 			<committed/>
 		</location>
+		<location id="id61" x="51" y="-229">
+			<committed/>
+		</location>
 		<init ref="id58"/>
-		<transition id="id61">
+		<transition id="id62">
+			<source ref="id61"/>
+			<target ref="id60"/>
+			<label kind="synchronisation" x="-102" y="-195">push[station]!</label>
+			<label kind="assignment" x="-102" y="-170">pop(), move_belt()</label>
+		</transition>
+		<transition id="id63">
+			<source ref="id59"/>
+			<target ref="id61"/>
+			<label kind="guard" x="127" y="-272">head_occupied()</label>
+			<label kind="synchronisation" x="127" y="-255">tick?</label>
+			<nail x="280" y="-229"/>
+			<nail x="187" y="-229"/>
+		</transition>
+		<transition id="id64">
 			<source ref="id58"/>
 			<target ref="id59"/>
 			<label kind="synchronisation" x="324" y="-169">init_done?</label>
 			<label kind="assignment" x="324" y="-152">build()</label>
 			<nail x="306" y="-152"/>
 		</transition>
-		<transition id="id62">
+		<transition id="id65">
 			<source ref="id59"/>
 			<target ref="id60"/>
-			<label kind="guard" x="-272" y="-33">x == 1/BELT_SPEED &amp;&amp; !head_occupied()</label>
-			<label kind="assignment" x="-51" y="-8">move_belt()</label>
+			<label kind="guard" x="-93" y="-34">!head_occupied()</label>
+			<label kind="synchronisation" x="-93" y="-17">tick?</label>
+			<label kind="assignment" x="-93" y="0">move_belt()</label>
 			<nail x="178" y="52"/>
 			<nail x="51" y="52"/>
 		</transition>
-		<transition id="id63">
-			<source ref="id59"/>
-			<target ref="id60"/>
-			<label kind="guard" x="68" y="-220">x == 1/BELT_SPEED &amp;&amp; head_occupied()</label>
-			<label kind="synchronisation" x="69" y="-203">push[station]!</label>
-			<label kind="assignment" x="69" y="-186">pop(), move_belt()</label>
-			<nail x="280" y="-186"/>
-			<nail x="51" y="-186"/>
-		</transition>
-		<transition id="id64">
+		<transition id="id66">
 			<source ref="id60"/>
 			<target ref="id59"/>
-			<label kind="synchronisation" x="76" y="-84">move[id]!</label>
-			<label kind="assignment" x="76" y="-50">x = 0</label>
+			<label kind="synchronisation" x="85" y="-85">move[id]!</label>
 		</transition>
-		<transition id="id65">
+		<transition id="id67">
 			<source ref="id59"/>
 			<target ref="id59"/>
 			<label kind="synchronisation" x="238" y="60">load[id]?</label>
@@ -503,27 +510,27 @@ void add_last() {
 	<template>
 		<name>Initializer</name>
 		<declaration>clock x;</declaration>
-		<location id="id66" x="-144" y="-42">
+		<location id="id68" x="-144" y="-42">
 			<name x="-187" y="-76">global_init</name>
 			<committed/>
 		</location>
-		<location id="id67" x="42" y="-42">
+		<location id="id69" x="42" y="-42">
 			<name x="0" y="-76">belt_clock</name>
 		</location>
-		<init ref="id66"/>
-		<transition id="id68">
-			<source ref="id67"/>
-			<target ref="id67"/>
+		<init ref="id68"/>
+		<transition id="id70">
+			<source ref="id69"/>
+			<target ref="id69"/>
 			<label kind="guard" x="212" y="-8">x == 1/BELT_SPEED</label>
-			<label kind="synchronisation" x="212" y="17">tick</label>
+			<label kind="synchronisation" x="212" y="17">tick!</label>
 			<label kind="assignment" x="212" y="42">x = 0</label>
 			<nail x="41" y="85"/>
 			<nail x="203" y="85"/>
 			<nail x="203" y="-42"/>
 		</transition>
-		<transition id="id69">
-			<source ref="id66"/>
-			<target ref="id67"/>
+		<transition id="id71">
+			<source ref="id68"/>
+			<target ref="id69"/>
 			<label kind="synchronisation" x="-93" y="-59">init_done!</label>
 		</transition>
 	</template>
