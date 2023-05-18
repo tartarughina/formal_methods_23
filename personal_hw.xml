@@ -463,7 +463,7 @@ void move_belt() {
     move_head();
     
     if (gate[id]) {
-        if (belts[id][head-1] == 0) {
+        if (head &gt; 0 &amp;&amp; belts[id][head-1] == 0) {
             belts[id][head-1] = belts[id][head];
             belts[id][head] = 0;
         }
