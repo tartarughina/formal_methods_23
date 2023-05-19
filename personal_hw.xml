@@ -12,6 +12,9 @@ const int FLOW_CONTROLLERS = 1;
 const int BELT_SPEED = 1;
 const int MAX_SLOTS = 32;
 
+int total_pieces = 0;
+
+typedef int[0, MAX_SLOTS-1] belt_pos_t;
 typedef int[0, SENSORS-1] sensor_t;
 typedef int[0, BELTS-1] belt_t;
 typedef int[0, STATIONS+MERGERS+FLOW_CONTROLLERS-1] station_t;
@@ -19,7 +22,7 @@ typedef int[0, STATIONS+MERGERS+FLOW_CONTROLLERS-1] station_t;
 typedef int[-1, MAX_SLOTS-1] pos_t;
 typedef struct { pos_t head, tail, length; int pieces; } config_t;
 
-config_t belt_conf[BELTS] = {{3, 14, 17, 11}, {3, 13, 20, 0}, {1, -1, 25, 0}, {-1, -1, 2, 0}, {4, 13, 16, 0}, {3, 6, 8, 0}, {-1, -1, 5, 0}, {-1, -1, 4, 0}, {1, 3, 4, 0}};
+config_t belt_conf[BELTS] = {{3, 14, 17, 1}, {3, 13, 20, 0}, {1, -1, 25, 0}, {-1, -1, 2, 0}, {4, 13, 16, 0}, {3, 6, 8, 0}, {-1, -1, 5, 0}, {-1, -1, 4, 0}, {1, 3, 4, 0}};
 
 // signal for all the sensors placed on a belt
 broadcast chan move[BELTS];
@@ -411,24 +414,9 @@ pos_t tail;
 pos_t length;
 
 void build() {
-    //int i;
-    
     head = belt_conf[id].head;
     tail = belt_conf[id].tail;
     length = belt_conf[id].length;
-    
-    /*
-    if (head == -1) {
-        for (i = 0; i &lt; belt_conf[id].pieces; i++) {
-            belts[id][i] = 1;
-        }
-    }
-    else {
-        for (i = head; i &lt; belt_conf[id].pieces + head; i++) {
-            belts[id][i] = 1;
-        }
-    }
-    */
 }
 
 // I need two methods, one that updates from the first segment to the head sensor and one that updates everything else
@@ -473,7 +461,7 @@ void move_belt() {
 }
 
 void pop() {
-    belts[id][0] = 0;
+    belts[id][0] -= 1;
 }
 
 bool head_occupied() {
@@ -481,7 +469,7 @@ bool head_occupied() {
 }
 
 void add_last() {
-    belts[id][length-1] = 1;
+    belts[id][length-1] += 1;
 }</declaration>
 		<location id="id63" x="467" y="-152">
 			<name x="450" y="-186">start</name>
@@ -494,6 +482,7 @@ void add_last() {
 			<committed/>
 		</location>
 		<location id="id66" x="51" y="-229">
+			<name x="-17" y="-263">loading_station</name>
 			<committed/>
 		</location>
 		<init ref="id63"/>
@@ -552,6 +541,7 @@ void add_last() {
 	<template>
 		<name>Initializer</name>
 		<declaration>clock x;
+int pieces_on_belt = 0;
 
 void init_all() {
     int i, j;
@@ -567,8 +557,23 @@ void init_all() {
                 belts[i][j] = 1;
             }
         }
+        
+        pieces_on_belt += belt_conf[i].pieces;
     }
+    total_pieces = pieces_on_belt;
+}
 
+void update_count() {
+    int i, j;
+    int app = 0;
+    
+    for (i = 0; i &lt; BELTS; i++) {
+        for(j = 0; j &lt; belt_conf[i].length;j++) {
+            app += belts[i][j];
+        }
+    }
+    
+    pieces_on_belt = app;
 }</declaration>
 		<location id="id74" x="-323" y="-42">
 			<name x="-382" y="-76">starting_point</name>
@@ -598,7 +603,7 @@ void init_all() {
 			<target ref="id75"/>
 			<label kind="guard" x="212" y="-8">x == 1/BELT_SPEED</label>
 			<label kind="synchronisation" x="212" y="17">tick!</label>
-			<label kind="assignment" x="212" y="42">x = 0</label>
+			<label kind="assignment" x="212" y="42">x = 0, update_count()</label>
 			<nail x="41" y="85"/>
 			<nail x="203" y="85"/>
 			<nail x="203" y="-42"/>
@@ -611,7 +616,7 @@ H0 = HeadSensor(0, 0, 3, 0);
 T0 = TailSensor(1, 0, 14, 5);
 
 B1 = Belt(1, 1);
-S1 = Station(1, 3, 2, false, true);
+S1 = Station(1, 4, 2, false, true);
 H1 = HeadSensor(2, 1, 3, 1);
 T1 = TailSensor(3, 1, 13, 0);
 
@@ -638,7 +643,7 @@ S6 = Merger(7,8);
 B7 = Belt(7, 7);
 
 B8 = Belt(8, 5);
-S8 = Station(5, 2, 0, true, true);
+S8 = Station(5, 3, 0, true, true);
 H8 = HeadSensor(9, 8, 1, 5);
 T8 = TailSensor(10, 8, 3, 7);
 
@@ -648,8 +653,18 @@ system Initializer, B0, B1, B2, B3, B4, B5, B6, B7, B8, S0, S1, S2, S3, S4, S5, 
 </system>
 	<queries>
 		<query>
-			<formula/>
+			<formula>A[] not deadlock</formula>
 			<comment/>
+		</query>
+		<query>
+			<formula>A[](Initializer.pieces_on_belt &gt;= total_pieces - 8)</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>A[](forall(i : belt_t) forall(j : belt_pos_t) belts[i][j] &lt; 2)</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2023-05-19 14:18:30 +0200">
+			</result>
 		</query>
 	</queries>
 </nta>
