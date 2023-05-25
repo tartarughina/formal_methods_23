@@ -747,9 +747,9 @@ system Initializer, Belt, Station, Flow, Merge, HeadSensor, TailSensor;
 			<comment/>
 		</query>
 		<query>
-			<formula>A[] (processing_pieces &lt;= 8)</formula>
+			<formula>A[] (processing_pieces &lt;= STATIONS + MERGERS + FLOW_CONTROLLERS)</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2023-05-25 15:16:13 +0200">
+			<result outcome="success" type="quality" timestamp="2023-05-25 23:43:44 +0200">
 			</result>
 		</query>
 		<query>
