@@ -41,7 +41,7 @@ typedef struct {
 } sensor_config_t;
 
 belt_config_t belt_conf[BELTS] = {
-    {0, 3, 14, 17, 11}, 
+    {0, 3, 14, 17, 1}, 
     {1, 3, 13, 20, 0},
     {6, 1, -1, 25, 0},
     {2, -1, -1, 2, 0},
@@ -79,6 +79,10 @@ sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
 };
 
 int total_pieces = 0;
+int processing_pieces = 0;
+int pieces_on_belt = 0;
+
+
 
 // signal for all the sensors placed on a belt
 broadcast chan move[BELTS];
@@ -93,7 +97,15 @@ chan offload[STATIONS+MERGERS+FLOW_CONTROLLERS];
 
 int belts[BELTS][MAX_SLOTS];
 bool gate[BELTS];
-int FLOW_OUTPUTS[2] = {3, 4};</declaration>
+int FLOW_OUTPUTS[2] = {3, 4};
+
+void increase() {
+    processing_pieces++;
+}
+
+void decrease() {
+    processing_pieces--;
+}</declaration>
 	<template>
 		<name>TailSensor</name>
 		<parameter>tail_sensor_t id</parameter>
@@ -342,10 +354,10 @@ void update() {
 			<name x="-119" y="-68">wait_piece</name>
 		</location>
 		<location id="id35" x="-85" y="170">
-			<name x="-136" y="187">wait_movement</name>
+			<name x="-136" y="187">processing</name>
 		</location>
 		<location id="id36" x="161" y="170">
-			<name x="178" y="161">load_dest</name>
+			<name x="178" y="161">offloading</name>
 			<committed/>
 		</location>
 		<location id="id37" x="161" y="-34">
@@ -357,6 +369,7 @@ void update() {
 			<source ref="id36"/>
 			<target ref="id37"/>
 			<label kind="synchronisation" x="170" y="51">load[dest()]!</label>
+			<label kind="assignment" x="170" y="76">decrease()</label>
 		</transition>
 		<transition id="id39">
 			<source ref="id37"/>
@@ -372,7 +385,7 @@ void update() {
 			<source ref="id34"/>
 			<target ref="id35"/>
 			<label kind="synchronisation" x="-76" y="51">push[id]?</label>
-			<label kind="assignment" x="-76" y="76">update()</label>
+			<label kind="assignment" x="-76" y="76">update(), increase()</label>
 		</transition>
 		<transition id="id42">
 			<source ref="id33"/>
@@ -391,8 +404,10 @@ void update() {
 			<name x="-51" y="-110">waiting</name>
 		</location>
 		<location id="id45" x="-25" y="161">
+			<name x="-68" y="178">processing</name>
 		</location>
 		<location id="id46" x="246" y="161">
+			<name x="204" y="178">offloading</name>
 			<committed/>
 		</location>
 		<init ref="id43"/>
@@ -400,6 +415,7 @@ void update() {
 			<source ref="id46"/>
 			<target ref="id44"/>
 			<label kind="synchronisation" x="110" y="17">load[belt]!</label>
+			<label kind="assignment" x="161" y="51">decrease()</label>
 		</transition>
 		<transition id="id48">
 			<source ref="id45"/>
@@ -410,6 +426,7 @@ void update() {
 			<source ref="id44"/>
 			<target ref="id45"/>
 			<label kind="synchronisation" x="-17" y="42">push[id]?</label>
+			<label kind="assignment" x="-17" y="76">increase()</label>
 		</transition>
 		<transition id="id50">
 			<source ref="id43"/>
@@ -421,8 +438,8 @@ void update() {
 		<name>Station</name>
 		<parameter>station_t id</parameter>
 		<declaration>clock x;
-
 int processing_time;
+
 belt_t belt;
 bool sensor;
 bool guard_sensor;
@@ -474,6 +491,7 @@ void build() {
 			<source ref="id56"/>
 			<target ref="id57"/>
 			<label kind="synchronisation" x="297" y="-136">load[belt]!</label>
+			<label kind="assignment" x="230" y="-144">decrease()</label>
 		</transition>
 		<transition id="id61">
 			<source ref="id57"/>
@@ -502,7 +520,7 @@ void build() {
 			<source ref="id52"/>
 			<target ref="id53"/>
 			<label kind="synchronisation" x="-102" y="-51">push[id]?</label>
-			<label kind="assignment" x="-102" y="-25">x = 0</label>
+			<label kind="assignment" x="-102" y="-25">x = 0, increase()</label>
 		</transition>
 		<transition id="id66">
 			<source ref="id51"/>
@@ -648,7 +666,6 @@ void add_last() {
 	<template>
 		<name>Initializer</name>
 		<declaration>clock x;
-int pieces_on_belt = 0;
 
 void init_all() {
     int i, j;
@@ -688,7 +705,7 @@ void update_count() {
 		</location>
 		<location id="id79" x="42" y="-42">
 			<name x="0" y="-76">belt_clock</name>
-			<label kind="invariant" x="-34" y="-93">x &lt;= 1/BELT_SPEED</label>
+			<label kind="invariant" x="-34" y="-93">x &lt;= BELT_SPEED</label>
 		</location>
 		<location id="id80" x="-136" y="-42">
 			<name x="-170" y="-76">init_over</name>
@@ -708,7 +725,7 @@ void update_count() {
 		<transition id="id83">
 			<source ref="id79"/>
 			<target ref="id79"/>
-			<label kind="guard" x="212" y="-8">x == 1/BELT_SPEED</label>
+			<label kind="guard" x="212" y="-8">x == BELT_SPEED</label>
 			<label kind="synchronisation" x="212" y="17">tick!</label>
 			<label kind="assignment" x="212" y="42">x = 0, update_count()</label>
 			<nail x="41" y="85"/>
@@ -730,13 +747,21 @@ system Initializer, Belt, Station, Flow, Merge, HeadSensor, TailSensor;
 			<comment/>
 		</query>
 		<query>
-			<formula>A[](Initializer.pieces_on_belt &gt;= total_pieces - 8)</formula>
+			<formula>A[] (processing_pieces &lt;= 8)</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2023-05-25 15:16:13 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A[](forall(i : belt_t) forall(j : belt_pos_t) belts[i][j] &lt; 2)</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2023-05-19 14:18:30 +0200">
+			<result outcome="success" type="quality" timestamp="2023-05-25 15:33:09 +0200">
+			</result>
+		</query>
+		<query>
+			<formula>A[](forall(i :  tail_sensor_t) (TailSensor(i).hold_station imply Station(TailSensor(i).station).waiting_queue))</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2023-05-25 15:51:07 +0200">
 			</result>
 		</query>
 	</queries>
