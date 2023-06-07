@@ -518,7 +518,6 @@ void update_count() {
 			<committed/>
 		</location>
 		<location id="id51" x="42" y="195">
-			<committed/>
 		</location>
 		<init ref="id48"/>
 		<transition id="id52">
