@@ -518,13 +518,14 @@ void update_count() {
 			<committed/>
 		</location>
 		<location id="id51" x="42" y="195">
+			<label kind="invariant" x="17" y="212">x &lt;= 0</label>
 		</location>
 		<init ref="id48"/>
 		<transition id="id52">
 			<source ref="id51"/>
 			<target ref="id49"/>
 			<label kind="synchronisation" x="272" y="42">tick!</label>
-			<label kind="assignment" x="272" y="76">update_count()</label>
+			<label kind="assignment" x="272" y="76">update_count(), x = 0</label>
 			<nail x="263" y="195"/>
 			<nail x="263" y="-42"/>
 		</transition>
@@ -533,7 +534,6 @@ void update_count() {
 			<target ref="id51"/>
 			<label kind="guard" x="51" y="42">x &gt;= BELT_SPEED</label>
 			<label kind="synchronisation" x="51" y="59">tick_components!</label>
-			<label kind="assignment" x="51" y="76">x = 0</label>
 		</transition>
 		<transition id="id54">
 			<source ref="id50"/>
