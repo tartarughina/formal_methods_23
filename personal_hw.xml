@@ -165,7 +165,7 @@ void addLast() {
 		</location>
 		<location id="id6" x="-841" y="-154">
 			<name x="-884" y="-137">processing</name>
-			<label kind="invariant" x="-1037" y="-162">x &lt;= processing_time()</label>
+			<label kind="invariant" x="-1045" y="-187">x &lt;= processing_time()</label>
 		</location>
 		<location id="id7" x="-518" y="-153">
 			<name x="-577" y="-136">processing_over</name>
@@ -368,6 +368,11 @@ pos_t length() {
 
 // I need two methods, one that updates from the first segment to the head sensor and one that updates everything else
 // this second method if the head is -1 needs to do nothing since the first method has already taken care of everything
+
+// One belt to rule them all... We need to change the move_belt function: iteratote on all belts to update them
+// Together with this change simplify the initializer... which can be merged with the Belt
+// When the clock reach BELT_SPEED send the tick_components signal and a single, broadcast move_belt
+
 void move_head() {
     int i;
     int limit = (head() == -1)?length():head();
@@ -407,6 +412,9 @@ void move_belt() {
     move_tail();
 }
 
+/*
+Old methods 
+
 void pop() {
     belts[id][0] -= 1;
 }
@@ -417,7 +425,8 @@ bool head_occupied() {
 
 void add_last() {
     belts[id][length()-1] += 1;
-}</declaration>
+}
+*/</declaration>
 		<location id="id32" x="501" y="-59">
 			<name x="484" y="-93">start</name>
 		</location>
@@ -511,7 +520,7 @@ void update_count() {
 		<transition id="id43">
 			<source ref="id39"/>
 			<target ref="id38"/>
-			<label kind="synchronisation" x="-93" y="-25">init_done!</label>
+			<label kind="synchronisation" x="-102" y="-17">init_done!</label>
 			<label kind="assignment" x="-102" y="-42">init_all()</label>
 		</transition>
 	</template>
@@ -529,10 +538,10 @@ pos_t pos() {
 station_t station() {
     return head_sensor_conf[id].station;
 }</declaration>
-		<location id="id44" x="119" y="-59">
+		<location id="id44" x="161" y="-59">
 		</location>
 		<location id="id45" x="-93" y="-59">
-			<name x="-144" y="-102">triggered</name>
+			<name x="-195" y="-93">triggered</name>
 		</location>
 		<location id="id46" x="-323" y="-59">
 			<name x="-348" y="-42">start</name>
@@ -547,9 +556,10 @@ station_t station() {
 		<transition id="id48">
 			<source ref="id44"/>
 			<target ref="id45"/>
-			<label kind="synchronisation" x="-51" y="-144">free[station()]?</label>
-			<label kind="assignment" x="-51" y="-127">gate[belt()] = true</label>
-			<nail x="17" y="-102"/>
+			<label kind="synchronisation" x="-59" y="-187">free[station()]?</label>
+			<label kind="assignment" x="-59" y="-170">gate[belt()] = true</label>
+			<nail x="161" y="-136"/>
+			<nail x="-93" y="-136"/>
 		</transition>
 		<transition id="id49">
 			<source ref="id45"/>
