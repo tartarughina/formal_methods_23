@@ -5,100 +5,96 @@
 
 const int HEAD_SENSORS = 6;
 const int TAIL_SENSORS = 5;
-const int BELTS = 9;
+const int BELTS = 7;
 const int STATIONS = 6;
 const int MERGERS = 1;
 const int FLOW_CONTROLLERS = 1;
 
+// const int DESTINATIONS = STATIONS + MERGERS + FLOW_CONTROLLERS;
+
 const int BELT_SPEED = 1;
-const int MAX_SLOTS = 32;
+const int MAX_SLOTS = 29;
 
 typedef int[0, MAX_SLOTS-1] belt_pos_t;
 typedef int[0, HEAD_SENSORS-1] head_sensor_t;
 typedef int[0, TAIL_SENSORS-1] tail_sensor_t;
 typedef int[0, BELTS-1] belt_t;
 typedef int[0, STATIONS-1] station_t;
-typedef int[0, STATIONS+MERGERS+FLOW_CONTROLLERS-1] dest_t;
-typedef int[-1, MAX_SLOTS-1] pos_t;
+// typedef int[0, DESTINATIONS-1] dest_t;
+typedef int[-1, MAX_SLOTS] pos_t;
+typedef int[1, 100] error_t;
 
 typedef struct { 
-    dest_t station;
     pos_t head, tail, length;
-    int pieces; 
+    int pieces;
 } belt_config_t;
 
 typedef struct {
+    belt_t input, output;
     int mean, variance;
-    belt_t belt;
-    bool sensor;
-    bool guard_sensor;
 } station_config_t;
 
 typedef struct {
     belt_t belt;
     pos_t pos;
-    dest_t station;
-    int[0, 100] error;
+    station_t station;
+    error_t error;
 } sensor_config_t;
 
-belt_config_t belt_conf[BELTS] = {
-    {0, 3, 14, 17, 11}, 
-    {1, 3, 13, 20, 0},
-    {6, 1, -1, 25, 0},
-    {2, -1, -1, 2, 0},
-    {4, 4, 13, 16, 0},
-    {3, 3, 6, 8, 0},
-    {7, -1, -1, 5, 0},
-    {7, -1, -1, 4, 0},
-    {5, 1, 3, 4, 0}
+const belt_config_t belt_conf[BELTS] = {
+    {3, 14, 17, 12}, 
+    {3, 13, 20, 10},
+    {2, -1, 29, 0},
+    {4, 13, 16, 0},
+    {3, 6, 8, 0},
+    {-1, -1, 5, 0},
+    {1, 3, 10, 0}
 };
 
-station_config_t station_conf[STATIONS] = {
-    {2, 2, 1, true, true},
-    {4, 3, 2, false, true},
-    {2, 5, 5, true, false},
-    {6, 6, 6, false, true},
-    {1, 3, 7, false, true},
-    {3, 6, 0, true, true}
+const station_config_t station_conf[STATIONS] = {
+    {0, 1, 2, 1},
+    {1, 2, 2, 1},
+    {2, 4, 2, 1},
+    {4, 5, 2, 1},
+    {3, 6, 2, 1},
+    {6, 0, 2, 1}
 };
 
-sensor_config_t head_sensor_conf[HEAD_SENSORS] = {
-  {0, 3, 0, 7},
-  {1, 3, 1, 1},
-  {2, 1, 6, 2},
-  {4, 4, 4, 10},
-  {5, 3, 3, 6},
-  {8, 1, 5, 5}
+const sensor_config_t head_sensor_conf[HEAD_SENSORS] = {
+  {0, 3, 0, 10},
+  {1, 3, 1, 10},
+  {2, 2, 2, 10},
+  {3, 4, 4, 10},
+  {4, 3, 3, 10},
+  {6, 1, 5, 10}
 };
 
-sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
+const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
     {0, 14, 5, 10},
-    {1, 13, 0, 5},
-    {4, 13, 6, 6},
-    {5, 6, 2, 2},
-    {8, 3, 7, 11}
+    {1, 13, 0, 10},
+    {3, 13, 4, 10},
+    {4, 6, 3, 10},
+    {6, 3, 5, 10}
 };
 
 int total_pieces = 0;
 int processing_pieces = 0;
 int pieces_on_belt = 0;
 
-
-
 // signal for all the sensors placed on a belt
-broadcast chan move[BELTS];
-broadcast chan tick;
+broadcast chan move;
+broadcast chan tick_components;
 broadcast chan init_done;
 
 // either we change the logic of the sensor to listen for the load signal or put another param to the station avoiding
-chan load[BELTS];
-chan push[STATIONS+MERGERS+FLOW_CONTROLLERS];
-chan free[STATIONS+MERGERS+FLOW_CONTROLLERS];
-chan offload[STATIONS+MERGERS+FLOW_CONTROLLERS];
+broadcast chan free[STATIONS];
 
-int belts[BELTS][MAX_SLOTS];
+// free and load should be merged together and made broadcast 
+
+int[0,1] belts[BELTS][MAX_SLOTS];
 bool gate[BELTS];
-int FLOW_OUTPUTS[2] = {3, 4};
+bool wait[BELTS];
+// int FLOW_OUTPUTS[2] = {3, 4};
 
 void increase() {
     processing_pieces++;
@@ -108,607 +104,250 @@ void decrease() {
     processing_pieces--;
 }</declaration>
 	<template>
-		<name>TailSensor</name>
-		<parameter>tail_sensor_t id</parameter>
-		<declaration>belt_t belt;
-pos_t pos;
-dest_t station;
-int[0,100] error;
+		<name>MergerV2</name>
+		<parameter>const belt_t belt, const pos_t pos, const belt_t other</parameter>
+		<declaration>void mergeBelts() {
+    belts[belt][pos+1] = belts[other][0];
+    belts[other][0] = 0;
+}</declaration>
+		<location id="id0" x="0" y="-59">
+			<name x="-59" y="-75">start</name>
+		</location>
+		<location id="id1" x="239" y="-58">
+			<name x="213" y="-92">waiting</name>
+		</location>
+		<init ref="id0"/>
+		<transition id="id2">
+			<source ref="id1"/>
+			<target ref="id1"/>
+			<label kind="guard" x="331" y="-42">!belts[belt][pos+1]</label>
+			<label kind="synchronisation" x="331" y="-25">tick_components?</label>
+			<label kind="assignment" x="331" y="-8">mergeBelts()</label>
+			<nail x="239" y="18"/>
+			<nail x="323" y="18"/>
+			<nail x="323" y="-58"/>
+		</transition>
+		<transition id="id3">
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="69" y="-84">init_done?</label>
+		</transition>
+	</template>
+	<template>
+		<name>StationV2</name>
+		<parameter>const station_t id</parameter>
+		<declaration>clock x;
 
-void build() {
-    belt = tail_sensor_conf[id].belt;
-    pos = tail_sensor_conf[id].pos;
-    station = tail_sensor_conf[id].station;
-    error = tail_sensor_conf[id].error;
+const int t_min = (station_conf[id].mean - station_conf[id].variance) / 3;
+const int t_max = (station_conf[id].mean + station_conf[id].variance) / 3;
+
+belt_t input() {
+    return station_conf[id].input;
 }
 
-bool pos_occupied() {
-    return belts[belt][pos];
+belt_t output() {
+    return station_conf[id].output;
+}
+
+pos_t length() {
+    return belt_conf[output()].length;
+}
+
+void addLast() {
+    belts[output()][length()-1] += 1;
 }</declaration>
-		<location id="id0" x="459" y="178">
-			<name x="442" y="144">start</name>
+		<location id="id4" x="-1343" y="-373">
+			<name x="-1360" y="-407">start</name>
 		</location>
-		<location id="id1" x="-8" y="-25">
-			<name x="-93" y="-17">queueing</name>
+		<location id="id5" x="-1045" y="-373">
+			<name x="-1071" y="-407">waiting</name>
 		</location>
-		<location id="id2" x="544" y="-25">
-			<name x="561" y="-17">queue_full</name>
+		<location id="id6" x="-1045" y="-153">
+			<name x="-1147" y="-161">processing</name>
+			<label kind="invariant" x="-1147" y="-178">x &lt;= t_max</label>
 		</location>
-		<location id="id3" x="-8" y="391">
-			<name x="8" y="357">offload_station</name>
+		<location id="id7" x="-518" y="-153">
+			<name x="-501" y="-170">processing_over</name>
+		</location>
+		<location id="id8" x="-519" y="-374">
+			<name x="-570" y="-408">update_sensor</name>
 			<committed/>
 		</location>
-		<location id="id4" x="544" y="391">
-			<name x="561" y="366">hold_station</name>
+		<location id="id9" x="-867" y="-153">
+			<label kind="invariant" x="-918" y="-187">x &lt;= t_max</label>
 		</location>
-		<location id="id5" x="255" y="178">
-			<name x="187" y="195">initialization</name>
-			<committed/>
+		<location id="id10" x="-688" y="-153">
+			<label kind="invariant" x="-731" y="-187">x &lt;= t_max</label>
 		</location>
-		<branchpoint id="id6" x="170" y="-161"/>
-		<branchpoint id="id7" x="-195" y="-102"/>
-		<branchpoint id="id8" x="595" y="-102"/>
-		<branchpoint id="id9" x="221" y="-25"/>
-		<branchpoint id="id10" x="161" y="391"/>
-		<branchpoint id="id11" x="544" y="468"/>
-		<init ref="id0"/>
+		<init ref="id4"/>
+		<transition id="id11">
+			<source ref="id10"/>
+			<target ref="id7"/>
+			<label kind="guard" x="-637" y="-153">x &gt;= t_min</label>
+		</transition>
 		<transition id="id12">
-			<source ref="id6"/>
-			<target ref="id2"/>
-			<label kind="probability" x="348" y="-187">error</label>
-			<nail x="544" y="-161"/>
+			<source ref="id9"/>
+			<target ref="id10"/>
+			<label kind="guard" x="-816" y="-153">x &gt;= t_min</label>
+			<label kind="assignment" x="-790" y="-136">x = 0</label>
 		</transition>
 		<transition id="id13">
 			<source ref="id6"/>
-			<target ref="id1"/>
-			<label kind="probability" x="42" y="-187">100 - error</label>
-			<nail x="-8" y="-161"/>
+			<target ref="id9"/>
+			<label kind="guard" x="-1011" y="-153">x &gt;= t_min</label>
+			<label kind="assignment" x="-977" y="-136">x = 0</label>
 		</transition>
-		<transition id="id14" controllable="false">
-			<source ref="id2"/>
-			<target ref="id6"/>
-			<label kind="guard" x="314" y="-144">!pos_occupied()</label>
-			<label kind="synchronisation" x="314" y="-127">move[belt]?</label>
+		<transition id="id14">
+			<source ref="id8"/>
+			<target ref="id5"/>
+			<label kind="synchronisation" x="-731" y="-450">free[id]!</label>
+			<label kind="assignment" x="-731" y="-433">decrease(), 
+addLast()</label>
 		</transition>
 		<transition id="id15">
 			<source ref="id7"/>
-			<target ref="id2"/>
-			<label kind="probability" x="144" y="-229">error</label>
-			<nail x="-195" y="-204"/>
-			<nail x="544" y="-204"/>
+			<target ref="id8"/>
+			<label kind="guard" x="-510" y="-289">!wait[output()]</label>
+			<label kind="synchronisation" x="-510" y="-272">move?</label>
 		</transition>
 		<transition id="id16">
-			<source ref="id7"/>
-			<target ref="id1"/>
-			<label kind="probability" x="-153" y="-127">100 - error</label>
-			<nail x="-8" y="-102"/>
+			<source ref="id5"/>
+			<target ref="id6"/>
+			<label kind="guard" x="-1037" y="-296">belts[input()][0]</label>
+			<label kind="synchronisation" x="-1037" y="-279">tick_components?</label>
+			<label kind="assignment" x="-1037" y="-262">x = 0, increase(), 
+belts[input()][0] = 0</label>
 		</transition>
 		<transition id="id17">
-			<source ref="id8"/>
-			<target ref="id1"/>
-			<label kind="probability" x="280" y="-102">error</label>
-			<nail x="-10" y="-102"/>
-		</transition>
-		<transition id="id18">
-			<source ref="id8"/>
-			<target ref="id2"/>
-			<label kind="probability" x="442" y="-85">100 - error</label>
-		</transition>
-		<transition id="id19">
-			<source ref="id9"/>
-			<target ref="id1"/>
-			<label kind="probability" x="42" y="-93">error</label>
-			<nail x="221" y="-102"/>
-			<nail x="-8" y="-102"/>
-		</transition>
-		<transition id="id20">
-			<source ref="id9"/>
-			<target ref="id2"/>
-			<label kind="probability" x="323" y="-17">100 - error</label>
-		</transition>
-		<transition id="id21" controllable="false">
-			<source ref="id1"/>
-			<target ref="id7"/>
-			<label kind="guard" x="-187" y="-68">!pos_occupied()</label>
-			<label kind="synchronisation" x="-187" y="-51">move[belt]?</label>
-			<nail x="-195" y="-25"/>
-		</transition>
-		<transition id="id22" controllable="false">
-			<source ref="id2"/>
-			<target ref="id8"/>
-			<label kind="guard" x="578" y="-68">pos_occupied()</label>
-			<label kind="synchronisation" x="578" y="-51">move[belt]?</label>
-			<nail x="714" y="-25"/>
-			<nail x="714" y="-102"/>
-		</transition>
-		<transition id="id23" controllable="false">
-			<source ref="id1"/>
-			<target ref="id9"/>
-			<label kind="guard" x="51" y="-59">pos_occupied()</label>
-			<label kind="synchronisation" x="51" y="-42">move[belt]?</label>
-		</transition>
-		<transition id="id24">
-			<source ref="id10"/>
-			<target ref="id4"/>
-			<label kind="probability" x="212" y="298">error</label>
-			<nail x="161" y="323"/>
-			<nail x="544" y="323"/>
-		</transition>
-		<transition id="id25">
-			<source ref="id10"/>
-			<target ref="id3"/>
-			<label kind="probability" x="34" y="400">100 - error</label>
-		</transition>
-		<transition id="id26" controllable="false">
 			<source ref="id4"/>
-			<target ref="id10"/>
-			<label kind="guard" x="170" y="400">!pos_occupied()</label>
-			<label kind="synchronisation" x="187" y="417">move[belt]?</label>
-		</transition>
-		<transition id="id27">
-			<source ref="id11"/>
-			<target ref="id4"/>
-			<label kind="probability" x="595" y="476">100 - error</label>
-			<nail x="722" y="468"/>
-			<nail x="722" y="391"/>
-		</transition>
-		<transition id="id28">
-			<source ref="id11"/>
-			<target ref="id3"/>
-			<label kind="probability" x="153" y="476">error</label>
-			<nail x="-8" y="468"/>
-		</transition>
-		<transition id="id29" controllable="false">
-			<source ref="id4"/>
-			<target ref="id11"/>
-			<label kind="guard" x="552" y="408">pos_occupied()</label>
-			<label kind="synchronisation" x="552" y="425">move[belt]?</label>
-		</transition>
-		<transition id="id30">
-			<source ref="id5"/>
-			<target ref="id2"/>
-			<label kind="guard" x="340" y="119">pos_occupied()</label>
-		</transition>
-		<transition id="id31">
-			<source ref="id5"/>
-			<target ref="id1"/>
-			<label kind="guard" x="42" y="119">!pos_occupied()</label>
-		</transition>
-		<transition id="id32">
-			<source ref="id0"/>
 			<target ref="id5"/>
-			<label kind="synchronisation" x="331" y="153">init_done?</label>
-			<label kind="assignment" x="331" y="179">build()</label>
-		</transition>
-		<transition id="id33">
-			<source ref="id1"/>
-			<target ref="id3"/>
-			<label kind="synchronisation" x="-289" y="161">offload[station]?</label>
-			<nail x="-136" y="170"/>
-		</transition>
-		<transition id="id34">
-			<source ref="id3"/>
-			<target ref="id1"/>
-			<label kind="synchronisation" x="0" y="238">offload[station]!</label>
-		</transition>
-		<transition id="id35">
-			<source ref="id2"/>
-			<target ref="id4"/>
-			<label kind="synchronisation" x="552" y="68">offload[station]?</label>
+			<label kind="synchronisation" x="-1266" y="-399">init_done?</label>
 		</transition>
 	</template>
 	<template>
-		<name>HeadSensor</name>
-		<parameter>head_sensor_t id</parameter>
-		<declaration>belt_t belt;
-pos_t pos;
-dest_t station;
-int[0,100] error;
-bool last_occupied;
-
-void build() {
-    belt = head_sensor_conf[id].belt;
-    pos = head_sensor_conf[id].pos;
-    station = head_sensor_conf[id].station;
-    error = head_sensor_conf[id].error;
+		<name>TailSensorV2</name>
+		<parameter>const tail_sensor_t id</parameter>
+		<declaration>belt_t belt() {
+    return tail_sensor_conf[id].belt;
 }
 
-bool pos_occupied() {
-    return belts[belt][pos];
-}</declaration>
-		<location id="id36" x="-263" y="272">
-			<name x="-322" y="263">start</name>
-		</location>
-		<location id="id37" x="8" y="-25">
-			<name x="25" y="-17">station_free</name>
-		</location>
-		<location id="id38" x="688" y="-25">
-			<name x="705" y="-17">station_busy</name>
-		</location>
-		<location id="id39" x="357" y="-25">
-			<name x="263" y="-59">triggered</name>
-		</location>
-		<location id="id40" x="8" y="272">
-			<name x="25" y="238">initialization</name>
-			<committed/>
-		</location>
-		<branchpoint id="id41" x="535" y="-25"/>
-		<branchpoint id="id42" x="688" y="102"/>
-		<branchpoint id="id43" x="-391" y="-25"/>
-		<branchpoint id="id44" x="229" y="-25"/>
-		<init ref="id36"/>
-		<transition id="id45">
-			<source ref="id41"/>
-			<target ref="id38"/>
-			<label kind="assignment" x="399" y="85">last_occupied = !pos_occupied()</label>
-			<label kind="probability" x="544" y="59">error</label>
-			<nail x="535" y="195"/>
-			<nail x="867" y="195"/>
-			<nail x="867" y="-25"/>
-		</transition>
-		<transition id="id46">
-			<source ref="id41"/>
-			<target ref="id38"/>
-			<label kind="assignment" x="433" y="-59">last_occupied = pos_occupied()</label>
-			<label kind="probability" x="569" y="-25">100 - error</label>
-		</transition>
-		<transition id="id47" controllable="false">
-			<source ref="id39"/>
-			<target ref="id41"/>
-			<label kind="synchronisation" x="374" y="-17">move[belt]?</label>
-			<label kind="assignment" x="374" y="0">gate[belt] = false</label>
-		</transition>
-		<transition id="id48">
-			<source ref="id42"/>
-			<target ref="id38"/>
-			<label kind="assignment" x="654" y="204">last_occupied = !pos_occupied()</label>
-			<label kind="probability" x="756" y="170">error</label>
-			<nail x="688" y="195"/>
-			<nail x="867" y="195"/>
-			<nail x="867" y="-25"/>
-		</transition>
-		<transition id="id49">
-			<source ref="id42"/>
-			<target ref="id38"/>
-			<label kind="assignment" x="731" y="-51">last_occupied = pos_occupied()</label>
-			<label kind="probability" x="731" y="-76">100 - error</label>
-			<nail x="867" y="102"/>
-			<nail x="867" y="-25"/>
-		</transition>
-		<transition id="id50" controllable="false">
-			<source ref="id38"/>
-			<target ref="id42"/>
-			<label kind="synchronisation" x="697" y="25">move[belt]?</label>
-		</transition>
-		<transition id="id51">
-			<source ref="id43"/>
-			<target ref="id39"/>
-			<label kind="probability" x="-357" y="110">error</label>
-			<nail x="-391" y="102"/>
-			<nail x="357" y="102"/>
-		</transition>
-		<transition id="id52">
-			<source ref="id43"/>
-			<target ref="id37"/>
-			<label kind="probability" x="-357" y="-110">100 - error</label>
-			<nail x="-391" y="-85"/>
-			<nail x="8" y="-85"/>
-		</transition>
-		<transition id="id53" controllable="false">
-			<source ref="id37"/>
-			<target ref="id43"/>
-			<label kind="guard" x="-374" y="-17">!pos_occupied()</label>
-			<label kind="synchronisation" x="-374" y="0">move[belt]?</label>
-		</transition>
-		<transition id="id54">
-			<source ref="id44"/>
-			<target ref="id37"/>
-			<label kind="probability" x="102" y="51">error</label>
-			<nail x="229" y="42"/>
-			<nail x="8" y="42"/>
-		</transition>
-		<transition id="id55">
-			<source ref="id44"/>
-			<target ref="id39"/>
-			<label kind="probability" x="238" y="-17">100 - error</label>
-		</transition>
-		<transition id="id56" controllable="false">
-			<source ref="id37"/>
-			<target ref="id44"/>
-			<label kind="guard" x="76" y="-68">pos_occupied()</label>
-			<label kind="synchronisation" x="75" y="-50">move[belt]?</label>
-		</transition>
-		<transition id="id57">
-			<source ref="id36"/>
-			<target ref="id40"/>
-			<label kind="synchronisation" x="-246" y="246">init_done?</label>
-			<label kind="assignment" x="-246" y="280">build(), gate[belt] = true</label>
-		</transition>
-		<transition id="id58">
-			<source ref="id40"/>
-			<target ref="id39"/>
-			<label kind="guard" x="374" y="170">pos_occupied()</label>
-			<nail x="357" y="272"/>
-		</transition>
-		<transition id="id59">
-			<source ref="id40"/>
-			<target ref="id37"/>
-			<label kind="guard" x="17" y="170">!pos_occupied()</label>
-		</transition>
-		<transition id="id60">
-			<source ref="id38"/>
-			<target ref="id39"/>
-			<label kind="guard" x="399" y="-153">last_occupied</label>
-			<label kind="synchronisation" x="399" y="-127">free[station]?</label>
-			<label kind="assignment" x="399" y="-102">gate[belt] = true</label>
-			<nail x="688" y="-102"/>
-			<nail x="357" y="-102"/>
-		</transition>
-		<transition id="id61">
-			<source ref="id38"/>
-			<target ref="id37"/>
-			<label kind="guard" x="127" y="-263">!last_occupied</label>
-			<label kind="synchronisation" x="127" y="-246">free[station]?</label>
-			<label kind="assignment" x="127" y="-229">gate[belt] = true</label>
-			<nail x="688" y="-204"/>
-			<nail x="8" y="-204"/>
-		</transition>
-		<transition id="id62">
-			<source ref="id37"/>
-			<target ref="id37"/>
-			<label kind="synchronisation" x="-229" y="-76">free[station]?</label>
-			<label kind="assignment" x="-229" y="-59">gate[belt] = true</label>
-			<nail x="-76" y="-25"/>
-			<nail x="-76" y="-85"/>
-			<nail x="8" y="-85"/>
-		</transition>
-	</template>
-	<template>
-		<name>FlowController</name>
-		<parameter>dest_t id</parameter>
-		<declaration>int counter;
-
-void build() {
-    counter = 0;
+pos_t pos() {
+    return tail_sensor_conf[id].pos;
 }
 
-belt_t dest() {
-    if (counter == 3) {
-        return FLOW_OUTPUTS[1];
-    }
-       
-    return FLOW_OUTPUTS[0];   
+error_t error() {
+    return tail_sensor_conf[id].error;
 }
 
 void update() {
-    if (counter == 3) {
-        counter = 0;
+    wait[belt()] = belts[belt()][pos()];
+}
+
+void malfunction() {
+    wait[belt()] = !belts[belt()][pos()];
+}</declaration>
+		<location id="id18" x="-76" y="-42">
+			<name x="-102" y="-76">start</name>
+		</location>
+		<location id="id19" x="-76" y="93">
+			<name x="-59" y="68">working</name>
+		</location>
+		<branchpoint id="id20" x="-212" y="229"/>
+		<init ref="id18"/>
+		<transition id="id21" controllable="false">
+			<source ref="id19"/>
+			<target ref="id20"/>
+			<label kind="synchronisation" x="-144" y="170">move?</label>
+		</transition>
+		<transition id="id22">
+			<source ref="id20"/>
+			<target ref="id19"/>
+			<label kind="assignment" x="-187" y="246">malfunction()</label>
+			<label kind="probability" x="-187" y="229">error()</label>
+			<nail x="-76" y="229"/>
+		</transition>
+		<transition id="id23">
+			<source ref="id20"/>
+			<target ref="id19"/>
+			<label kind="assignment" x="-195" y="51">update()</label>
+			<label kind="probability" x="-195" y="68">100-error()</label>
+			<nail x="-212" y="93"/>
+		</transition>
+		<transition id="id24">
+			<source ref="id18"/>
+			<target ref="id19"/>
+			<label kind="synchronisation" x="-68" y="0">init_done?</label>
+			<label kind="assignment" x="-68" y="17">update()</label>
+		</transition>
+	</template>
+	<template>
+		<name>FlowV2</name>
+		<parameter>const belt_t belt, const pos_t pos, const belt_t other</parameter>
+		<declaration>pos_t length() {
+    return belt_conf[other].length;
+}
+
+void switchBelt() {
+    if(!gate[belt]) {
+        belts[belt][pos] = 0;
+        belts[other][length()-1] += 1;
     }
-    
-    counter++;
 }</declaration>
-		<location id="id63" x="-298" y="-34">
-			<name x="-357" y="-51">start</name>
+		<location id="id25" x="-246" y="-68">
+			<name x="-305" y="-85">start</name>
 		</location>
-		<location id="id64" x="-86" y="-34">
-			<name x="-119" y="-68">wait_piece</name>
+		<location id="id26" x="-34" y="-68">
+			<name x="-76" y="-102">wait_piece</name>
 		</location>
-		<location id="id65" x="-85" y="170">
-			<name x="-136" y="187">processing</name>
-		</location>
-		<location id="id66" x="161" y="170">
-			<name x="178" y="161">offloading</name>
-			<committed/>
-		</location>
-		<location id="id67" x="161" y="-34">
-			<name x="127" y="-68">free_sensor</name>
-			<committed/>
-		</location>
-		<init ref="id63"/>
-		<transition id="id68">
-			<source ref="id66"/>
-			<target ref="id67"/>
-			<label kind="synchronisation" x="170" y="51">load[dest()]!</label>
-			<label kind="assignment" x="170" y="76">decrease()</label>
+		<init ref="id25"/>
+		<transition id="id27">
+			<source ref="id26"/>
+			<target ref="id26"/>
+			<label kind="guard" x="76" y="-34">belts[belt][pos]</label>
+			<label kind="synchronisation" x="76" y="-17">tick_components?</label>
+			<nail x="-34" y="17"/>
+			<nail x="59" y="17"/>
+			<nail x="59" y="-68"/>
 		</transition>
-		<transition id="id69">
-			<source ref="id67"/>
-			<target ref="id64"/>
-			<label kind="synchronisation" x="-8" y="-59">free[id]!</label>
-		</transition>
-		<transition id="id70">
-			<source ref="id65"/>
-			<target ref="id66"/>
-			<label kind="synchronisation" x="-17" y="144">move[dest()]?</label>
-		</transition>
-		<transition id="id71">
-			<source ref="id64"/>
-			<target ref="id65"/>
-			<label kind="synchronisation" x="-76" y="51">push[id]?</label>
-			<label kind="assignment" x="-76" y="76">update(), increase()</label>
-		</transition>
-		<transition id="id72">
-			<source ref="id63"/>
-			<target ref="id64"/>
-			<label kind="synchronisation" x="-238" y="-59">init_done?</label>
-			<label kind="assignment" x="-238" y="-25">build()</label>
-		</transition>
-	</template>
-	<template>
-		<name>Merger</name>
-		<parameter>dest_t id, belt_t belt</parameter>
-		<location id="id73" x="-264" y="-77">
-			<name x="-323" y="-93">start</name>
-		</location>
-		<location id="id74" x="-25" y="-76">
-			<name x="-51" y="-110">waiting</name>
-		</location>
-		<location id="id75" x="-25" y="161">
-			<name x="-68" y="178">processing</name>
-		</location>
-		<location id="id76" x="246" y="161">
-			<name x="204" y="178">offloading</name>
-			<committed/>
-		</location>
-		<init ref="id73"/>
-		<transition id="id77">
-			<source ref="id76"/>
-			<target ref="id74"/>
-			<label kind="synchronisation" x="110" y="17">load[belt]!</label>
-			<label kind="assignment" x="161" y="51">decrease()</label>
-		</transition>
-		<transition id="id78">
-			<source ref="id75"/>
-			<target ref="id76"/>
-			<label kind="synchronisation" x="59" y="136">move[belt]?</label>
-		</transition>
-		<transition id="id79">
-			<source ref="id74"/>
-			<target ref="id75"/>
-			<label kind="synchronisation" x="-17" y="42">push[id]?</label>
-			<label kind="assignment" x="-17" y="76">increase()</label>
-		</transition>
-		<transition id="id80">
-			<source ref="id73"/>
-			<target ref="id74"/>
-			<label kind="synchronisation" x="-195" y="-102">init_done?</label>
-		</transition>
-	</template>
-	<template>
-		<name>Station</name>
-		<parameter>station_t id</parameter>
-		<declaration>clock x;
-int processing_time;
-
-belt_t belt;
-bool sensor;
-bool guard_sensor;
-
-int t_min;
-int t_max;
-
-void build() {
-    belt = station_conf[id].belt;
-    sensor = station_conf[id].sensor;
-    guard_sensor = station_conf[id].guard_sensor;
-    t_min = (station_conf[id].mean - station_conf[id].variance) / 3;
-    t_max = (station_conf[id].mean + station_conf[id].variance) / 3;
-}</declaration>
-		<location id="id81" x="-408" y="-144">
-			<name x="-425" y="-178">start</name>
-		</location>
-		<location id="id82" x="-110" y="-144">
-			<name x="-136" y="-178">waiting</name>
-		</location>
-		<location id="id83" x="-110" y="76">
-			<name x="-153" y="93">processing</name>
-			<label kind="invariant" x="-221" y="68">x &lt;= t_max</label>
-		</location>
-		<location id="id84" x="212" y="76">
-			<name x="153" y="93">processing_over</name>
-			<committed/>
-		</location>
-		<location id="id85" x="476" y="76">
-			<name x="425" y="42">waiting_queue</name>
-		</location>
-		<location id="id86" x="476" y="-144">
-			<name x="425" y="-178">offload_piece</name>
-			<committed/>
-		</location>
-		<location id="id87" x="212" y="-144">
-			<name x="161" y="-178">update_sensor</name>
-			<committed/>
-		</location>
-		<location id="id88" x="-34" y="153">
-			<label kind="invariant" x="-68" y="170">x &lt;= t_max</label>
-		</location>
-		<location id="id89" x="110" y="153">
-			<label kind="invariant" x="100" y="170">x &lt;= t_max</label>
-		</location>
-		<init ref="id81"/>
-		<transition id="id90">
-			<source ref="id89"/>
-			<target ref="id84"/>
-			<label kind="guard" x="153" y="119">x &gt;= t_min</label>
-		</transition>
-		<transition id="id91">
-			<source ref="id88"/>
-			<target ref="id89"/>
-			<label kind="guard" x="-16" y="119">x &gt;= t_min</label>
-		</transition>
-		<transition id="id92">
-			<source ref="id83"/>
-			<target ref="id88"/>
-			<label kind="guard" x="-59" y="93">x &gt;= t_min</label>
-		</transition>
-		<transition id="id93">
-			<source ref="id87"/>
-			<target ref="id82"/>
-			<label kind="guard" x="0" y="-272">!guard_sensor</label>
-			<nail x="59" y="-246"/>
-		</transition>
-		<transition id="id94">
-			<source ref="id84"/>
-			<target ref="id86"/>
-			<label kind="guard" x="280" y="-59">!sensor</label>
-		</transition>
-		<transition id="id95">
-			<source ref="id86"/>
-			<target ref="id87"/>
-			<label kind="synchronisation" x="297" y="-136">load[belt]!</label>
-			<label kind="assignment" x="230" y="-144">decrease()</label>
-		</transition>
-		<transition id="id96">
-			<source ref="id87"/>
-			<target ref="id82"/>
-			<label kind="guard" x="0" y="-119">guard_sensor</label>
-			<label kind="synchronisation" x="0" y="-136">free[id]!</label>
-		</transition>
-		<transition id="id97">
-			<source ref="id85"/>
-			<target ref="id86"/>
-			<label kind="synchronisation" x="501" y="-51">offload[id]?</label>
-		</transition>
-		<transition id="id98">
-			<source ref="id84"/>
-			<target ref="id85"/>
-			<label kind="guard" x="323" y="85">sensor</label>
-			<label kind="synchronisation" x="323" y="110">offload[id]!</label>
-			<nail x="450" y="76"/>
-		</transition>
-		<transition id="id99">
-			<source ref="id82"/>
-			<target ref="id83"/>
-			<label kind="synchronisation" x="-102" y="-51">push[id]?</label>
-			<label kind="assignment" x="-102" y="-25">x = 0, increase()</label>
-		</transition>
-		<transition id="id100">
-			<source ref="id81"/>
-			<target ref="id82"/>
-			<label kind="synchronisation" x="-331" y="-170">init_done?</label>
-			<label kind="assignment" x="-331" y="-136">build()</label>
+		<transition id="id28">
+			<source ref="id25"/>
+			<target ref="id26"/>
+			<label kind="synchronisation" x="-186" y="-93">init_done?</label>
 		</transition>
 	</template>
 	<template>
 		<name>Belt</name>
-		<parameter>belt_t id</parameter>
-		<declaration>pos_t head;
-pos_t tail;
-pos_t length;
-dest_t station;
+		<declaration>clock x;
 
-void build() {
-    station = belt_conf[id].station;
-    head = belt_conf[id].head;
-    tail = belt_conf[id].tail;
-    length = belt_conf[id].length;
+pos_t head(belt_t id) {
+    return belt_conf[id].head;
+}
+
+pos_t length(belt_t id) {
+    return belt_conf[id].length;
+}
+
+pos_t tail(belt_t id) {
+    return belt_conf[id].tail;
+}
+
+int max_queue(belt_t id) {
+    pos_t head = (head(id) == -1) ? 0 : head(id);
+    pos_t tail = (tail(id) == -1) ? length(id) : tail(id);
+
+    return tail-head;
 }
 
 // I need two methods, one that updates from the first segment to the head sensor and one that updates everything else
 // this second method if the head is -1 needs to do nothing since the first method has already taken care of everything
-void move_head() {
+
+// One belt to rule them all... We need to change the move_belt function: iteratote on all belts to update them
+// Together with this change simplify the initializer... which can be merged with the Belt
+// When the clock reach BELT_SPEED send the tick_components signal and a single, broadcast move_belt
+
+void move_head(belt_t id) {
     int i;
-    int limit = (head == -1)?length:head;
+    int limit = (head(id) == -1)?length(id):head(id);
     
     for (i = 1; i &lt; limit; i++) {
         if (belts[id][i-1] == 0) {
@@ -718,11 +357,11 @@ void move_head() {
     }
 }
 
-void move_tail() {
+void move_tail(belt_t id) {
     int i;
     
-    if (head != -1) {
-        for (i = head+1; i &lt; length; i++) {
+    if (head(id) != -1) {
+        for (i = head(id)+1; i &lt; length(id); i++) {
             if (belts[id][i-1] == 0) {
                 belts[id][i-1] = belts[id][i];
                 belts[id][i] = 0;
@@ -731,19 +370,41 @@ void move_tail() {
     }
 }
 
+void move_gate(belt_t id) {
+    if (gate[id]) {
+        if (head(id) &gt; 0 &amp;&amp; belts[id][head(id)-1] == 0) {
+            belts[id][head(id)-1] = belts[id][head(id)];
+            belts[id][head(id)] = 0;
+        }
+    }
+}
 
 void move_belt() {
-    move_head();
+
+    for(i : belt_t) {
+        move_head(i);
+        
+        move_gate(i);
     
-    if (gate[id]) {
-        if (head &gt; 0 &amp;&amp; belts[id][head-1] == 0) {
-            belts[id][head-1] = belts[id][head];
-            belts[id][head] = 0;
+        move_tail(i);
+    }
+}
+
+void update_count() {
+    int i, j;
+    int app = 0;
+    
+    for (i = 0; i &lt; BELTS; i++) {
+        for(j = 0; j &lt; belt_conf[i].length;j++) {
+            app += belts[i][j];
         }
     }
     
-    move_tail();
+    pieces_on_belt = app;
 }
+
+/*
+Old methods 
 
 void pop() {
     belts[id][0] -= 1;
@@ -754,80 +415,44 @@ bool head_occupied() {
 }
 
 void add_last() {
-    belts[id][length-1] += 1;
-}</declaration>
-		<location id="id101" x="467" y="-152">
-			<name x="450" y="-186">start</name>
+    belts[id][length()-1] += 1;
+}
+*/</declaration>
+		<location id="id29" x="501" y="-59">
+			<name x="484" y="-93">start</name>
 		</location>
-		<location id="id102" x="280" y="-59">
-			<name x="187" y="-84">gate_open</name>
+		<location id="id30" x="280" y="-59">
+			<label kind="invariant" x="270" y="-42">x &lt;=BELT_SPEED</label>
 		</location>
-		<location id="id103" x="51" y="-59">
-			<name x="-17" y="-68">moving</name>
+		<location id="id31" x="51" y="-59">
 			<committed/>
 		</location>
-		<location id="id104" x="51" y="-229">
-			<name x="-17" y="-263">loading_station</name>
-			<committed/>
-		</location>
-		<init ref="id101"/>
-		<transition id="id105">
-			<source ref="id104"/>
-			<target ref="id103"/>
-			<label kind="guard" x="-161" y="-212">head == 0 &amp;&amp; !gate[id]</label>
-			<label kind="assignment" x="-161" y="-187">move_belt()</label>
-			<nail x="-8" y="-144"/>
+		<init ref="id29"/>
+		<transition id="id32">
+			<source ref="id31"/>
+			<target ref="id30"/>
+			<label kind="synchronisation" x="110" y="-246">move!</label>
+			<label kind="assignment" x="110" y="-229">move_belt(),
+update_count(),
+x = 0</label>
+			<nail x="51" y="-170"/>
+			<nail x="280" y="-170"/>
 		</transition>
-		<transition id="id106">
-			<source ref="id104"/>
-			<target ref="id103"/>
-			<label kind="guard" x="59" y="-187">head != 0 || (head == 0 &amp;&amp; gate[id])</label>
-			<label kind="synchronisation" x="59" y="-170">push[station]!</label>
-			<label kind="assignment" x="59" y="-153">pop(), move_belt()</label>
+		<transition id="id33">
+			<source ref="id30"/>
+			<target ref="id31"/>
+			<label kind="guard" x="110" y="-51">x&gt;=BELT_SPEED</label>
+			<label kind="synchronisation" x="102" y="-34">tick_components!</label>
 		</transition>
-		<transition id="id107">
-			<source ref="id102"/>
-			<target ref="id104"/>
-			<label kind="guard" x="127" y="-272">head_occupied()</label>
-			<label kind="synchronisation" x="127" y="-255">tick?</label>
-			<nail x="280" y="-229"/>
-			<nail x="187" y="-229"/>
-		</transition>
-		<transition id="id108">
-			<source ref="id101"/>
-			<target ref="id102"/>
-			<label kind="synchronisation" x="324" y="-169">init_done?</label>
-			<label kind="assignment" x="324" y="-152">build()</label>
-			<nail x="306" y="-152"/>
-		</transition>
-		<transition id="id109">
-			<source ref="id102"/>
-			<target ref="id103"/>
-			<label kind="guard" x="-93" y="-34">!head_occupied()</label>
-			<label kind="synchronisation" x="-93" y="-17">tick?</label>
-			<label kind="assignment" x="-93" y="0">move_belt()</label>
-			<nail x="178" y="52"/>
-			<nail x="51" y="52"/>
-		</transition>
-		<transition id="id110">
-			<source ref="id103"/>
-			<target ref="id102"/>
-			<label kind="synchronisation" x="85" y="-85">move[id]!</label>
-		</transition>
-		<transition id="id111">
-			<source ref="id102"/>
-			<target ref="id102"/>
-			<label kind="synchronisation" x="238" y="60">load[id]?</label>
-			<label kind="assignment" x="238" y="77">add_last()</label>
-			<nail x="331" y="52"/>
-			<nail x="229" y="52"/>
+		<transition id="id34">
+			<source ref="id29"/>
+			<target ref="id30"/>
+			<label kind="synchronisation" x="348" y="-59">init_done?</label>
 		</transition>
 	</template>
 	<template>
 		<name>Initializer</name>
-		<declaration>clock x;
-
-void init_all() {
+		<declaration>void init_all() {
     int i, j;
     
     for (i = 0; i &lt; BELTS; i++) {
@@ -847,79 +472,135 @@ void init_all() {
     total_pieces = pieces_on_belt;
 }
 
-void update_count() {
-    int i, j;
-    int app = 0;
-    
-    for (i = 0; i &lt; BELTS; i++) {
-        for(j = 0; j &lt; belt_conf[i].length;j++) {
-            app += belts[i][j];
-        }
-    }
-    
-    pieces_on_belt = app;
+</declaration>
+		<location id="id35" x="42" y="-42">
+			<name x="0" y="-76">init_over</name>
+		</location>
+		<location id="id36" x="-136" y="-42">
+			<name x="-170" y="-76">start</name>
+			<committed/>
+		</location>
+		<init ref="id36"/>
+		<transition id="id37">
+			<source ref="id36"/>
+			<target ref="id35"/>
+			<label kind="synchronisation" x="-93" y="-17">init_done!</label>
+			<label kind="assignment" x="-93" y="-34">init_all()</label>
+		</transition>
+	</template>
+	<template>
+		<name>HeadSensorV2</name>
+		<parameter>const head_sensor_t id</parameter>
+		<declaration>belt_t belt() {
+    return head_sensor_conf[id].belt;
+}
+
+pos_t pos() {
+    return head_sensor_conf[id].pos;
+}
+
+error_t error() {
+    return head_sensor_conf[id].error;
+}
+
+station_t station() {
+    return head_sensor_conf[id].station;
 }</declaration>
-		<location id="id112" x="-323" y="-42">
-			<name x="-382" y="-76">starting_point</name>
-			<committed/>
+		<location id="id38" x="127" y="-59">
 		</location>
-		<location id="id113" x="42" y="-42">
-			<name x="0" y="-76">belt_clock</name>
-			<label kind="invariant" x="-34" y="-93">x &lt;= BELT_SPEED</label>
+		<location id="id39" x="-399" y="-59">
+			<name x="-442" y="-42">triggered</name>
 		</location>
-		<location id="id114" x="-136" y="-42">
-			<name x="-170" y="-76">init_over</name>
-			<committed/>
+		<location id="id40" x="-731" y="-59">
+			<name x="-756" y="-42">start</name>
 		</location>
-		<init ref="id112"/>
-		<transition id="id115">
-			<source ref="id114"/>
-			<target ref="id113"/>
-			<label kind="synchronisation" x="-93" y="-42">init_done!</label>
+		<branchpoint id="id41" x="-127" y="51"/>
+		<branchpoint id="id42" x="-127" y="-178"/>
+		<init ref="id40"/>
+		<transition id="id43">
+			<source ref="id41"/>
+			<target ref="id39"/>
+			<label kind="probability" x="-255" y="59">100-error()</label>
+			<nail x="-297" y="51"/>
 		</transition>
-		<transition id="id116">
-			<source ref="id112"/>
-			<target ref="id114"/>
-			<label kind="assignment" x="-272" y="-42">init_all()</label>
+		<transition id="id44">
+			<source ref="id41"/>
+			<target ref="id38"/>
+			<label kind="assignment" x="-85" y="76">gate[belt()] = false</label>
+			<label kind="probability" x="-85" y="59">error()</label>
+			<nail x="0" y="51"/>
 		</transition>
-		<transition id="id117">
-			<source ref="id113"/>
-			<target ref="id113"/>
-			<label kind="guard" x="212" y="-8">x == BELT_SPEED</label>
-			<label kind="synchronisation" x="212" y="17">tick!</label>
-			<label kind="assignment" x="212" y="42">x = 0, update_count()</label>
-			<nail x="41" y="85"/>
-			<nail x="203" y="85"/>
-			<nail x="203" y="-42"/>
+		<transition id="id45">
+			<source ref="id42"/>
+			<target ref="id39"/>
+			<label kind="probability" x="-229" y="-204">error()</label>
+			<nail x="-297" y="-178"/>
+		</transition>
+		<transition id="id46" controllable="false">
+			<source ref="id39"/>
+			<target ref="id41"/>
+			<label kind="guard" x="-246" y="-17">!belts[belt()][pos()]</label>
+			<label kind="synchronisation" x="-246" y="-34">move?</label>
+		</transition>
+		<transition id="id47">
+			<source ref="id42"/>
+			<target ref="id38"/>
+			<label kind="assignment" x="-93" y="-221">gate[belt()] = false</label>
+			<label kind="probability" x="-93" y="-204">100-error()</label>
+			<nail x="0" y="-178"/>
+		</transition>
+		<transition id="id48" controllable="false">
+			<source ref="id39"/>
+			<target ref="id42"/>
+			<label kind="guard" x="-246" y="-110">belts[belt()][pos()]</label>
+			<label kind="synchronisation" x="-246" y="-127">move?</label>
+		</transition>
+		<transition id="id49">
+			<source ref="id40"/>
+			<target ref="id39"/>
+			<label kind="synchronisation" x="-680" y="-102">init_done?</label>
+			<label kind="assignment" x="-680" y="-85">gate[belt()] = true</label>
+		</transition>
+		<transition id="id50">
+			<source ref="id38"/>
+			<target ref="id39"/>
+			<label kind="synchronisation" x="-93" y="-331">free[station()]?</label>
+			<label kind="assignment" x="-93" y="-314">gate[belt()] = true</label>
+			<nail x="127" y="-280"/>
+			<nail x="-399" y="-280"/>
 		</transition>
 	</template>
 	<system>// Place template instantiations here.
 
-Flow = FlowController(6);
-Merge = Merger(7,8);
+Flow = FlowV2(2, 3, 3);
+Merge = MergerV2(6, 4, 5);
 
 // List one or more processes to be composed into a system.
-system Initializer, Belt, Station, Flow, Merge, HeadSensor, TailSensor;
+//system Initializer, Belt, Station, Flow, Merge, HeadSensor, TailSensor;
+
+system Initializer, Belt, StationV2, Flow, Merge, HeadSensorV2, TailSensorV2;
 </system>
 	<queries>
 		<query>
-			<formula>A[] not deadlock</formula>
+			<formula>Pr[&lt;=100] (&lt;&gt; StationV2(0).processing)</formula>
 			<comment/>
 		</query>
 		<query>
-			<formula>A[] (processing_pieces &lt;= STATIONS + MERGERS + FLOW_CONTROLLERS)</formula>
+			<formula>A[] (processing_pieces &lt;= STATIONS)</formula>
 			<comment/>
+			<result outcome="success" type="quality" timestamp="2023-06-09 14:28:07 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A[](forall(i : belt_t) forall(j : belt_pos_t) belts[i][j] &lt; 2)</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2023-05-25 15:33:09 +0200">
+			<result outcome="success" type="quality" timestamp="2023-06-09 14:31:18 +0200">
 			</result>
 		</query>
 		<query>
-			<formula>A[](forall(i :  tail_sensor_t) (TailSensor(i).hold_station imply Station(TailSensor(i).station).waiting_queue))</formula>
+			<formula>A[](forall(i :  belt_t) ((sum(j : belt_pos_t) belts[i][j])&lt;=Belt.max_queue(i)))</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2023-05-25 15:51:07 +0200">
+			<result outcome="success" type="quality" timestamp="2023-06-09 14:54:22 +0200">
 			</result>
 		</query>
 	</queries>
