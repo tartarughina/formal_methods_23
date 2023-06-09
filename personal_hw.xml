@@ -40,7 +40,7 @@ typedef struct {
 } sensor_config_t;
 
 const belt_config_t belt_conf[BELTS] = {
-    {3, 14, 17, 3}, 
+    {3, 14, 17, 5}, 
     {3, 13, 20, 0},
     {2, -1, 29, 0},
     {4, 13, 16, 0},
@@ -86,8 +86,8 @@ broadcast chan tick_components;
 broadcast chan init_done;
 
 // either we change the logic of the sensor to listen for the load signal or put another param to the station avoiding
-chan load[BELTS];
-chan push[STATIONS];
+//chan load[BELTS];
+//chan push[STATIONS];
 chan free[STATIONS];
 // free and load should be merged together and made broadcast 
 
@@ -273,6 +273,7 @@ void switchBelt() {
 			<target ref="id19"/>
 			<label kind="guard" x="76" y="-34">belts[belt][pos]</label>
 			<label kind="synchronisation" x="76" y="-17">tick_components?</label>
+			<label kind="assignment" x="76" y="0">switchBelt()</label>
 			<nail x="-34" y="17"/>
 			<nail x="59" y="17"/>
 			<nail x="59" y="-68"/>
@@ -515,7 +516,7 @@ system Initializer, Belt, StationV2, Flow, Merge, HeadSensorV2, TailSensorV2;
 		<query>
 			<formula>A[] not deadlock</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2023-06-09 14:26:43 +0200">
+			<result outcome="success" type="quality" timestamp="2023-06-10 00:05:31 +0200">
 			</result>
 		</query>
 		<query>
