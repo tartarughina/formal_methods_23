@@ -300,6 +300,7 @@ void malfunction() {
 }
 
 void switchBelt() {
+    // flow policy
     if(!gate[belt]) {
         belts[belt][pos] = 0;
         belts[other][length()-1] += 1;
@@ -317,6 +318,7 @@ void switchBelt() {
 			<target ref="id30"/>
 			<label kind="guard" x="76" y="-34">belts[belt][pos]</label>
 			<label kind="synchronisation" x="76" y="-17">tick_components?</label>
+			<label kind="assignment" x="76" y="0">switchBelt()</label>
 			<nail x="-34" y="17"/>
 			<nail x="59" y="17"/>
 			<nail x="59" y="-68"/>
@@ -602,7 +604,7 @@ system Initializer, Belt, StationV2, Flow, Merge, HeadSensorV2, TailSensorV2;
 </system>
 	<queries>
 		<query>
-			<formula>Pr[&lt;=100] ((deadlock))</formula>
+			<formula>Pr[&lt;=100] &lt;&gt; not deadlock)</formula>
 			<comment/>
 		</query>
 		<query>
