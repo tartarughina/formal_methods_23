@@ -516,7 +516,7 @@ system Initializer, Belt, StationV2, Flow, Merge, HeadSensorV2, TailSensorV2;
 		<query>
 			<formula>A[] not deadlock</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2023-06-10 12:07:46 +0200">
+			<result outcome="success" type="quality" timestamp="2023-06-11 15:03:12 +0200">
 			</result>
 		</query>
 		<query>
@@ -528,7 +528,7 @@ system Initializer, Belt, StationV2, Flow, Merge, HeadSensorV2, TailSensorV2;
 		<query>
 			<formula>A[](forall(i : belt_t) forall(j : belt_pos_t) belts[i][j] &lt; 2)</formula>
 			<comment/>
-			<result outcome="success" type="quality" timestamp="2023-06-09 14:31:18 +0200">
+			<result outcome="success" type="quality" timestamp="2023-06-11 15:21:28 +0200">
 			</result>
 		</query>
 		<query>
