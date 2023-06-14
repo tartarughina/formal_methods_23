@@ -39,7 +39,7 @@ typedef struct {
 } sensor_config_t;
 
 const belt_config_t belt_conf[BELTS] = {
-    {3, 14, 17, 10}, 
+    {3, 14, 17, 3}, 
     {3, 13, 20, 0},
     {2, -1, 29, 0},
     {4, 13, 16, 0},
