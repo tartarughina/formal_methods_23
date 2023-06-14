@@ -75,7 +75,7 @@ const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
 broadcast chan move, tick, tick_components, init_done;
 broadcast chan free[STATIONS];
  
-bool belts[BELTS][MAX_SLOTS];
+int[0,2] belts[BELTS][MAX_SLOTS];
 bool gate[BELTS];
 bool wait[BELTS];
 
@@ -110,7 +110,7 @@ void decrease() {
 		<parameter>const belt_t belt, const pos_t pos, const belt_t other</parameter>
 		<declaration>void mergeBelts() {
     belts[belt][pos+1] = belts[other][0];
-    belts[other][0] = false;
+    belts[other][0]--;
 }</declaration>
 		<location id="id0" x="238" y="-59">
 			<name x="212" y="-93">waiting</name>
@@ -151,13 +151,13 @@ pos_t length() {
 void offload() {
     //decrease();
     
-    belts[output()][length()-1] = true;
+    belts[output()][length()-1]++;
 }
 
 void load() {
     //increase();
     
-    belts[input()][0] = false;
+    belts[input()][0]--;
 }</declaration>
 		<location id="id2" x="-841" y="-374">
 			<name x="-867" y="-408">waiting</name>
@@ -269,16 +269,16 @@ void switchBelt() {
     if (policy == 1) { return; }
     
     if (policy == 0 &amp;&amp; !gate[belt]) {
-        belts[belt][pos] = false;
-        belts[other][length()-1] = true;
+        belts[belt][pos]--;
+        belts[other][length()-1]++;
     } else if (policy == 2){
-            belts[belt][pos] = false;
-            belts[other][length()-1] = true;
+            belts[belt][pos]--;
+            belts[other][length()-1]++;
         }
         else {
             if (branch) {
-                belts[belt][pos] = false;
-                belts[other][length()-1] = true;
+                belts[belt][pos]--;
+                belts[other][length()-1]++;
             }
             
             branch = !branch;
@@ -538,14 +538,14 @@ system Initializer, Belt, StationV2, Flow, Merge, HeadSensorV2, TailSensorV2;
 		</query>
 		<query>
 			<formula>A[] (Initializer.init_over imply (sum(x : station_t) not StationV2(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]) == sum(k : belt_t) belt_conf[k].pieces)</formula>
-			<comment>Always for all paths, once initilized, the pieces in the system remain the same,this also verify that two pieces never overlap since that would cause a piece to disappear</comment>
-			<result outcome="success" type="quality" timestamp="2023-06-14 11:54:21 +0200">
+			<comment>Always for all paths, once initilized, the pieces in the system remain the same,this also verify that two pieces never overlap or a station never holds more than one piece</comment>
+			<result outcome="success" type="quality" timestamp="2023-06-14 13:30:25 +0200">
 			</result>
 		</query>
 		<query>
-			<formula>A[](forall(i : belt_t) forall(j : belt_pos_t) belts[i][j] &lt; 2)</formula>
+			<formula>A[] (Initializer.init_over imply forall(i : belt_t) forall(j : belt_pos_t) 0 &lt;= belts[i][j] &lt; 2)</formula>
 			<comment>Always for all paths it never happens that in the belt two pieces overlap</comment>
-			<result outcome="success" type="quality" timestamp="2023-06-14 11:51:25 +0200">
+			<result outcome="success" type="quality" timestamp="2023-06-14 13:35:09 +0200">
 			</result>
 		</query>
 		<query>
@@ -564,7 +564,7 @@ sum(x : station_t) not StationV2(x).waiting
 - total pieces in the system
 - pieces on belt
 - pieces being processed</comment>
-			<result outcome="success" type="quality" timestamp="2023-06-14 12:02:58 +0200">
+			<result outcome="success" type="quality" timestamp="2023-06-14 13:37:21 +0200">
 				<plot title="Simulations (1)" xaxis="time" yaxis="value">
 					<series title="sum (k:(const (label belt_t:(range (int) &quot;0&quot; &quot;BELTS - 1&quot;)))) belt_conf[k].pieces" type="l" color="0xff0000" encoding="csv">0.0,3.0
 200.000002,3.0
@@ -573,26 +573,26 @@ sum(x : station_t) not StationV2(x).waiting
 0.0,3.0
 4.0,3.0
 4.0,2.0
-6.0,2.0
-6.0,3.0
-10.0,3.0
+5.0,2.0
+5.0,3.0
+9.0,3.0
+9.0,2.0
 10.0,2.0
-11.0,2.0
-11.0,3.0
-15.0,3.0
+10.0,3.0
+14.0,3.0
+14.0,2.0
 15.0,2.0
-16.0,2.0
-16.0,3.0
-26.0,3.0
-26.0,2.0
+15.0,3.0
+25.0,3.0
+25.0,2.0
 27.0,2.0
 27.0,3.0
 31.0,3.0
 31.0,2.0
-32.0,2.0
-32.0,3.0
-36.0,3.0
-36.0,2.0
+33.0,2.0
+33.0,3.0
+37.0,3.0
+37.0,2.0
 38.0,2.0
 38.0,3.0
 56.0,3.0
@@ -606,26 +606,28 @@ sum(x : station_t) not StationV2(x).waiting
 67.0,2.0
 69.0,2.0
 69.0,3.0
-73.0,3.0
-73.0,2.0
-75.0,2.0
-75.0,3.0
+74.0,3.0
+74.0,2.0
+76.0,2.0
+76.0,3.0
 77.0,3.0
 77.0,1.0
 78.0,1.0
-78.0,3.0
-85.0,3.0
-85.0,2.0
+78.0,2.0
+79.0,2.0
+79.0,3.0
+86.0,3.0
+86.0,2.0
 87.0,2.0
 87.0,3.0
 89.0,3.0
 89.0,2.0
-91.0,2.0
-91.0,3.0
+90.0,2.0
+90.0,3.0
 95.0,3.0
 95.0,2.0
-97.0,2.0
-97.0,3.0
+96.0,2.0
+96.0,3.0
 104.0,3.0
 104.0,2.0
 105.0,2.0
@@ -634,78 +636,79 @@ sum(x : station_t) not StationV2(x).waiting
 109.0,2.0
 111.0,2.0
 111.0,3.0
-117.0,3.0
+116.0,3.0
+116.0,2.0
 117.0,2.0
-119.0,2.0
-119.0,3.0
+117.0,3.0
 125.0,3.0
 125.0,2.0
 127.0,2.0
 127.0,3.0
 131.0,3.0
 131.0,2.0
-133.0,2.0
-133.0,3.0
+132.0,2.0
+132.0,3.0
 156.0,3.0
 156.0,2.0
 157.0,2.0
 157.0,3.0
-160.0,3.0
-160.0,2.0
-162.0,2.0
-162.0,3.0
+158.0,3.0
+158.0,2.0
+159.0,2.0
+159.0,3.0
 165.0,3.0
 165.0,2.0
 167.0,2.0
 167.0,3.0
-172.0,3.0
-172.0,2.0
+169.0,3.0
+169.0,2.0
+171.0,2.0
+171.0,3.0
+173.0,3.0
+173.0,2.0
 174.0,2.0
-174.0,1.0
-174.0,2.0
-175.0,2.0
-175.0,3.0
+174.0,3.0
 177.0,3.0
 177.0,2.0
-178.0,2.0
-178.0,3.0
-185.0,3.0
+179.0,2.0
+179.0,3.0
+184.0,3.0
+184.0,2.0
 185.0,2.0
-187.0,2.0
-187.0,3.0
-191.0,3.0
-191.0,2.0
-193.0,2.0
-193.0,3.0
-197.0,3.0
+185.0,3.0
+188.0,3.0
+188.0,2.0
+189.0,2.0
+189.0,3.0
+196.0,3.0
+196.0,2.0
 197.0,2.0
-198.0,2.0
-198.0,3.0
+197.0,3.0
 200.000002,3.0
 					</series>
 					<series title="sum (x:(const (label station_t:(range (int) &quot;0&quot; &quot;STATIONS - 1&quot;)))) !StationV2[x].waiting" type="l" color="0x0000ff" encoding="csv">0.0,0.0
 4.0,0.0
 4.0,1.0
-6.0,1.0
-6.0,0.0
-10.0,0.0
+5.0,1.0
+5.0,0.0
+9.0,0.0
+9.0,1.0
 10.0,1.0
-11.0,1.0
-11.0,0.0
-15.0,0.0
+10.0,0.0
+14.0,0.0
+14.0,1.0
 15.0,1.0
-16.0,1.0
-16.0,0.0
-26.0,0.0
-26.0,1.0
+15.0,0.0
+25.0,0.0
+25.0,1.0
 27.0,1.0
 27.0,0.0
 31.0,0.0
 31.0,1.0
-32.0,1.0
-32.0,0.0
-36.0,0.0
-36.0,1.0
+33.0,1.0
+33.0,0.0
+37.0,0.0
+37.0,1.0
 38.0,1.0
 38.0,0.0
 56.0,0.0
@@ -719,26 +722,28 @@ sum(x : station_t) not StationV2(x).waiting
 67.0,1.0
 69.0,1.0
 69.0,0.0
-73.0,0.0
-73.0,1.0
-75.0,1.0
-75.0,0.0
+74.0,0.0
+74.0,1.0
+76.0,1.0
+76.0,0.0
 77.0,0.0
 77.0,2.0
 78.0,2.0
-78.0,0.0
-85.0,0.0
-85.0,1.0
+78.0,1.0
+79.0,1.0
+79.0,0.0
+86.0,0.0
+86.0,1.0
 87.0,1.0
 87.0,0.0
 89.0,0.0
 89.0,1.0
-91.0,1.0
-91.0,0.0
+90.0,1.0
+90.0,0.0
 95.0,0.0
 95.0,1.0
-97.0,1.0
-97.0,0.0
+96.0,1.0
+96.0,0.0
 104.0,0.0
 104.0,1.0
 105.0,1.0
@@ -747,73 +752,55 @@ sum(x : station_t) not StationV2(x).waiting
 109.0,1.0
 111.0,1.0
 111.0,0.0
-117.0,0.0
+116.0,0.0
+116.0,1.0
 117.0,1.0
-119.0,1.0
-119.0,0.0
+117.0,0.0
 125.0,0.0
 125.0,1.0
 127.0,1.0
 127.0,0.0
 131.0,0.0
 131.0,1.0
-133.0,1.0
-133.0,0.0
+132.0,1.0
+132.0,0.0
 156.0,0.0
 156.0,1.0
 157.0,1.0
 157.0,0.0
-160.0,0.0
-160.0,1.0
-162.0,1.0
-162.0,0.0
+158.0,0.0
+158.0,1.0
+159.0,1.0
+159.0,0.0
 165.0,0.0
 165.0,1.0
 167.0,1.0
 167.0,0.0
-172.0,0.0
-172.0,1.0
+169.0,0.0
+169.0,1.0
+171.0,1.0
+171.0,0.0
+173.0,0.0
+173.0,1.0
 174.0,1.0
-174.0,2.0
-174.0,1.0
-175.0,1.0
-175.0,0.0
+174.0,0.0
 177.0,0.0
 177.0,1.0
-178.0,1.0
-178.0,0.0
-185.0,0.0
+179.0,1.0
+179.0,0.0
+184.0,0.0
+184.0,1.0
 185.0,1.0
-187.0,1.0
-187.0,0.0
-191.0,0.0
-191.0,1.0
-193.0,1.0
-193.0,0.0
-197.0,0.0
+185.0,0.0
+188.0,0.0
+188.0,1.0
+189.0,1.0
+189.0,0.0
+196.0,0.0
+196.0,1.0
 197.0,1.0
-198.0,1.0
-198.0,0.0
+197.0,0.0
 200.000002,0.0
-					</series>
-					<comment/>
-				</plot>
-			</result>
-		</query>
-		<query>
-			<formula>simulate [&lt;=200] {
-(sum(x : station_t) not StationV2(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]),
-sum(k : belt_t) belt_conf[k].pieces
-}</formula>
-			<comment/>
-			<result outcome="success" type="quality" timestamp="2023-06-14 11:48:55 +0200">
-				<plot title="Simulations (1)" xaxis="time" yaxis="value">
-					<series title="(sum (x:(const (label station_t:(range (int) &quot;0&quot; &quot;STATIONS - 1&quot;)))) !StationV2[x].waiting) + (sum (i:(const (label belt_t:(range (int) &quot;0&quot; &quot;BELTS - 1&quot;)))) sum (j:(const (label belt_pos_t:(range (int) &quot;0&quot; &quot;MAX_SLOTS - 1&quot;)))) belts[i][j])" type="l" color="0xff0000" encoding="csv">0.0,0.0
-0.0,12.0
-200.000002,12.0
-					</series>
-					<series title="sum (k:(const (label belt_t:(range (int) &quot;0&quot; &quot;BELTS - 1&quot;)))) belt_conf[k].pieces" type="l" color="0x00ffff" encoding="csv">0.0,12.0
-200.000002,12.0
 					</series>
 					<comment/>
 				</plot>
