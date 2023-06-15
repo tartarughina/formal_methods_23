@@ -39,8 +39,8 @@ typedef struct {
 } sensor_config_t;
 
 const belt_config_t belt_conf[BELTS] = {
-    {3, 14, 17, 3}, 
-    {3, 13, 20, 0},
+    {3, 14, 17, 12}, 
+    {3, 13, 20, 10},
     {2, -1, 29, 0},
     {4, 13, 16, 0},
     {3, 6, 8, 0},
@@ -78,6 +78,8 @@ broadcast chan move, tick, tick_components, init_done;
 broadcast chan free[STATIONS];
  
 int[0,2] belts[BELTS][MAX_SLOTS];
+// gate: true --&gt; open
+// gate: false --&gt; closed
 bool gate[BELTS];
 bool wait[BELTS];
 
@@ -133,6 +135,7 @@ void decrease() {
 		<name>StationV2</name>
 		<parameter>const station_t id</parameter>
 		<declaration>clock x;
+bool error = false;
 
 const int t_min = (station_conf[id].mean - station_conf[id].variance) / 3;
 const int t_max = (station_conf[id].mean + station_conf[id].variance) / 3;
@@ -149,10 +152,20 @@ pos_t length() {
     return belt_conf[output()].length;
 }
 
+bool detect_error() {
+    if (belts[output()][length()-1] == 2) {
+        error = true;
+        
+        return true;
+    }
+    
+    return false;
+}
+
 void offload() {
     //decrease();
-    
-    belts[output()][length()-1]++;
+    if (!detect_error())
+        belts[output()][length()-1]++;
 }
 
 void load() {
@@ -296,6 +309,26 @@ void malfunction() {
 
 bool branch = false;
 
+// if error is true it's a deadlock situation
+bool error = false;
+
+bool detect_error() {
+    if (belts[other][length()-1] == 2) {
+        error = true;
+        
+        return true;
+    }
+    
+    return false;
+}
+
+void swap() {
+    if (!detect_error()) {
+        belts[belt][pos]--;
+        belts[other][length()-1]++; 
+    }
+}
+
 // POLICY SCHEDULE
 // 0 --&gt; Go to the free station
 // 1 --&gt; Keep flowing, do nothing
@@ -306,16 +339,13 @@ void switchBelt() {
     if (policy == 1) { return; }
     
     if (policy == 0 &amp;&amp; !gate[belt]) {
-        belts[belt][pos]--;
-        belts[other][length()-1]++;
+        swap();
     } else if (policy == 2){
-            belts[belt][pos]--;
-            belts[other][length()-1]++;
+            swap();
         }
         else {
             if (branch) {
-                belts[belt][pos]--;
-                belts[other][length()-1]++;
+                swap();
             }
             
             branch = !branch;
@@ -328,9 +358,9 @@ void switchBelt() {
 		<transition id="id26">
 			<source ref="id25"/>
 			<target ref="id25"/>
-			<label kind="guard" x="76" y="-34">belts[belt][pos]</label>
-			<label kind="synchronisation" x="76" y="-17">tick_components?</label>
-			<label kind="assignment" x="76" y="0">switchBelt()</label>
+			<label kind="guard" x="76" y="-51">belts[belt][pos] &amp;&amp; !error</label>
+			<label kind="synchronisation" x="76" y="-34">tick_components?</label>
+			<label kind="assignment" x="76" y="-17">switchBelt()</label>
 			<nail x="-34" y="17"/>
 			<nail x="59" y="17"/>
 			<nail x="59" y="-68"/>
@@ -409,6 +439,17 @@ void move_belt() {
     
         move_tail(i);
     }
+}
+
+// return true when the gate is closed and no piece is between pos: 0 and head
+bool check_deadlock(belt_t id) {
+    int i;
+    int tot = 0;
+    
+    for ( i = 0; i &lt; belt_conf[id].head; i++)
+        tot += belts[id][i];
+        
+    return tot == 0 and !gate[id];
 }
 
 /*
@@ -604,34 +645,137 @@ station_t station() {
 // 2 --&gt; Switch every time
 // 3 --&gt; Round-robin
 
-Flow = FlowV2(2, 3, 3, /*policy schedule*/3);
+Flow = FlowV2(2, 3, 3, /*policy schedule*/0);
 Merge = MergerV2(6, 4, 5);
 
 system Initializer, Belt, StationV2, Flow, Merge, HeadSensorV2, TailSensorV2;
 </system>
 	<queries>
 		<query>
-			<formula>A[] not deadlock</formula>
-			<comment>Always for all paths the model doesn't incur into deadlock state</comment>
-			<result outcome="success" type="quality" timestamp="2023-06-14 11:50:52 +0200">
+			<formula>Pr [&lt;=1000] (&lt;&gt; Initializer.init_over imply exists(i : station_t) StationV2(i).waiting and Belt.check_deadlock(StationV2(i).input()) or exists(j: station_t) StationV2(j).error or Flow.error)</formula>
+			<comment>Eventually the system will incur in a deadlock state where, since the belt is no longer moving pieces, the stations start to load more than one piece onto the same segment or no station is fed with a new piece</comment>
+			<result outcome="success" type="interval" value="≥ 0.950056 (95% CI)" timestamp="2023-06-15 12:16:38 +0200">
+				<details>≥ 0.950056 (95% CI)</details>
+				<plot title="Probability Density Distribution" xaxis="run duration in time" yaxis="probability density">
+					<series title="density" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,4.503599627370496E15
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,4.503599627370496E15
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Probability Density Confidence Intervals" xaxis="run duration in time" yaxis="probability density">
+					<series title="upper limit" type="b(0.000000)" color="0xa0a0ff" encoding="csv">0.0,1.0
+					</series>
+					<series title="lower limit" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,0.9500559162941453
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,4.503599627370496E15
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="probability" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,1.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="b(0.000000)" color="0xa0a0ff" encoding="csv">0.0,1.0
+					</series>
+					<series title="lower limit" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,0.9500559162941453
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Cumulative Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">0.0,0.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Cumulative Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="k" color="0x0000dd" encoding="csv">0.0,0.04994408370585468
+					</series>
+					<series title="lower limit" type="k" color="0xdd0000" encoding="csv">0.0,0.0
+					</series>
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">0.0,0.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Frequency Histogram" xaxis="run duration in time" yaxis="count">
+					<series title="count" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,72.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,72.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
 			</result>
 		</query>
 		<query>
-			<formula>A[] (Initializer.init_over imply (sum(x : station_t) not StationV2(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]) == sum(k : belt_t) belt_conf[k].pieces)</formula>
-			<comment>Always for all paths, once initilized, the pieces in the system remain the same,this also verify that two pieces never overlap or a station never holds more than one piece</comment>
-			<result outcome="success" type="quality" timestamp="2023-06-14 13:30:25 +0200">
+			<formula>Pr [&lt;=1000] ([] Initializer.init_over imply (sum(x : station_t) not StationV2(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]?1:0) == sum(k : belt_t) belt_conf[k].pieces)</formula>
+			<comment>For all paths, once initilized, the pieces in the system remain the same, so no station is containing more than 1 piece and each segment has at most one piece</comment>
+			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-15 12:23:29 +0200">
+				<details>≤ 0.0499441 (95% CI)</details>
 			</result>
 		</query>
 		<query>
-			<formula>A[] (Initializer.init_over imply forall(i : belt_t) forall(j : belt_pos_t) 0 &lt;= belts[i][j] &lt; 2)</formula>
-			<comment>Always for all paths it never happens that in the belt two pieces overlap</comment>
-			<result outcome="success" type="quality" timestamp="2023-06-14 13:35:09 +0200">
+			<formula>Pr [&lt;=1000] ([] Initializer.init_over imply forall(i : belt_t) forall(j : belt_pos_t) 0 &lt;= belts[i][j] &lt; 2)</formula>
+			<comment>For all paths the segments of the belt hold only one piece</comment>
+			<result outcome="success" type="interval" value="≥ 0.950056 (95% CI)" timestamp="2023-06-15 12:29:24 +0200">
+				<details>≥ 0.950056 (95% CI)</details>
 			</result>
 		</query>
 		<query>
-			<formula>A[] (Initializer.init_over imply forall(i :  belt_t) ((sum(j : belt_pos_t) belts[i][j])&lt;=Belt.max_queue(i)))</formula>
-			<comment>Always for all paths the pieces on the belts are within the queue length once the system in initialized</comment>
-			<result outcome="success" type="quality" timestamp="2023-06-14 12:01:03 +0200">
+			<formula>Pr [&lt;=1000] ([] Initializer.init_over imply forall(i :  belt_t) ((sum(j : belt_pos_t) belts[i][j])&lt;=Belt.max_queue(i)))</formula>
+			<comment>For all paths the pieces on the belts are within the queue length once the system in initialized</comment>
+			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-15 11:17:27 +0200">
+				<details>≤ 0.0499441 (95% CI)</details>
+			</result>
+		</query>
+		<query>
+			<formula>Pr [&lt;=1000] ([] Flow.error)</formula>
+			<comment>For all paths the Flow component throw an error</comment>
+			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-15 12:31:02 +0200">
+				<details>≤ 0.0499441 (95% CI)</details>
+			</result>
+		</query>
+		<query>
+			<formula>Pr [&lt;=1000] ([] forall(i : station_t) StationV2(i).error)</formula>
+			<comment>For all paths all the stations reach the error state</comment>
+			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-15 12:26:02 +0200">
+				<details>≤ 0.0499441 (95% CI)</details>
 			</result>
 		</query>
 		<query>
