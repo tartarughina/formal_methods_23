@@ -130,7 +130,7 @@ void decrease() {
 	<template>
 		<name>StationV2</name>
 		<parameter>const station_t id</parameter>
-		<declaration>clock x;
+		<declaration>int x = 0;
 
 int processing_time() {
     return station_conf[id].processing_time;
@@ -175,23 +175,32 @@ void load() {
 		</location>
 		<init ref="id2"/>
 		<transition id="id6">
+			<source ref="id3"/>
+			<target ref="id3"/>
+			<label kind="synchronisation" x="-985" y="-34">tick?</label>
+			<label kind="assignment" x="-985" y="-17">x++</label>
+			<nail x="-841" y="-17"/>
+			<nail x="-1003" y="-17"/>
+			<nail x="-1003" y="-153"/>
+		</transition>
+		<transition id="id7">
 			<source ref="id5"/>
 			<target ref="id2"/>
 			<label kind="synchronisation" x="-731" y="-425">free[id]!</label>
 			<label kind="assignment" x="-731" y="-408">offload()</label>
 		</transition>
-		<transition id="id7">
+		<transition id="id8">
 			<source ref="id4"/>
 			<target ref="id5"/>
 			<label kind="guard" x="-510" y="-289">!wait[output()]</label>
 			<label kind="synchronisation" x="-510" y="-272">move?</label>
 		</transition>
-		<transition id="id8">
+		<transition id="id9">
 			<source ref="id3"/>
 			<target ref="id4"/>
 			<label kind="guard" x="-782" y="-178">x &gt;= processing_time()</label>
 		</transition>
-		<transition id="id9">
+		<transition id="id10">
 			<source ref="id2"/>
 			<target ref="id3"/>
 			<label kind="guard" x="-833" y="-297">belts[input()][0]</label>
@@ -217,35 +226,35 @@ station_t station() {
 void update() {
     wait[belt()] = belts[belt()][pos()];
 }</declaration>
-		<location id="id10" x="-76" y="-76">
+		<location id="id11" x="-76" y="-76">
 			<name x="-102" y="-110">start</name>
 		</location>
-		<location id="id11" x="-76" y="93">
+		<location id="id12" x="-76" y="93">
 			<name x="-59" y="68">queueing</name>
 		</location>
-		<location id="id12" x="187" y="221">
+		<location id="id13" x="187" y="221">
 			<name x="212" y="212">queue_full</name>
 		</location>
-		<init ref="id10"/>
-		<transition id="id13">
-			<source ref="id12"/>
-			<target ref="id11"/>
+		<init ref="id11"/>
+		<transition id="id14">
+			<source ref="id13"/>
+			<target ref="id12"/>
 			<label kind="guard" x="195" y="93">!belts[belt()][pos()]</label>
 			<label kind="synchronisation" x="203" y="110">move?</label>
 			<label kind="assignment" x="203" y="127">update()</label>
 			<nail x="187" y="93"/>
 		</transition>
-		<transition id="id14">
-			<source ref="id11"/>
-			<target ref="id12"/>
+		<transition id="id15">
+			<source ref="id12"/>
+			<target ref="id13"/>
 			<label kind="guard" x="-76" y="229">belts[belt()][pos()]</label>
 			<label kind="synchronisation" x="-76" y="246">move?</label>
 			<label kind="assignment" x="-76" y="263">update()</label>
 			<nail x="-76" y="221"/>
 		</transition>
-		<transition id="id15">
-			<source ref="id10"/>
-			<target ref="id11"/>
+		<transition id="id16">
+			<source ref="id11"/>
+			<target ref="id12"/>
 			<label kind="synchronisation" x="-68" y="-17">init_done?</label>
 			<label kind="assignment" x="-68" y="0">update()</label>
 		</transition>
@@ -284,13 +293,13 @@ void switchBelt() {
             branch = !branch;
         }
 }</declaration>
-		<location id="id16" x="-34" y="-68">
+		<location id="id17" x="-34" y="-68">
 			<name x="-68" y="-102">wait_piece</name>
 		</location>
-		<init ref="id16"/>
-		<transition id="id17">
-			<source ref="id16"/>
-			<target ref="id16"/>
+		<init ref="id17"/>
+		<transition id="id18">
+			<source ref="id17"/>
+			<target ref="id17"/>
 			<label kind="guard" x="76" y="-34">belts[belt][pos]</label>
 			<label kind="synchronisation" x="76" y="-17">tick_components?</label>
 			<label kind="assignment" x="76" y="0">switchBelt()</label>
@@ -402,40 +411,42 @@ void add_last() {
     belts[id][length()-1] += 1;
 }
 */</declaration>
-		<location id="id18" x="501" y="-59">
+		<location id="id19" x="501" y="-59">
 			<name x="484" y="-93">start</name>
 		</location>
-		<location id="id19" x="280" y="-59">
+		<location id="id20" x="280" y="-59">
 			<label kind="invariant" x="270" y="-42">x &lt;=BELT_SPEED</label>
 		</location>
-		<location id="id20" x="51" y="-59">
+		<location id="id21" x="51" y="-59">
 			<committed/>
 		</location>
-		<init ref="id18"/>
-		<transition id="id21">
-			<source ref="id20"/>
-			<target ref="id19"/>
+		<init ref="id19"/>
+		<transition id="id22">
+			<source ref="id21"/>
+			<target ref="id20"/>
 			<label kind="synchronisation" x="110" y="-238">move!</label>
 			<label kind="assignment" x="110" y="-221">move_belt(),
 x = 0</label>
 			<nail x="51" y="-170"/>
 			<nail x="280" y="-170"/>
 		</transition>
-		<transition id="id22">
-			<source ref="id19"/>
-			<target ref="id20"/>
+		<transition id="id23">
+			<source ref="id20"/>
+			<target ref="id21"/>
 			<label kind="guard" x="119" y="-51">x&gt;=BELT_SPEED</label>
 			<label kind="synchronisation" x="110" y="-34">tick_components!</label>
 		</transition>
-		<transition id="id23">
-			<source ref="id18"/>
-			<target ref="id19"/>
+		<transition id="id24">
+			<source ref="id19"/>
+			<target ref="id20"/>
 			<label kind="synchronisation" x="348" y="-59">init_done?</label>
 		</transition>
 	</template>
 	<template>
 		<name>Initializer</name>
-		<declaration>void init_all() {
+		<declaration>clock x;
+
+void init_all() {
     int i, j;
     
     for (i = 0; i &lt; BELTS; i++) {
@@ -456,17 +467,28 @@ x = 0</label>
 }
 
 </declaration>
-		<location id="id24" x="42" y="-42">
+		<location id="id25" x="42" y="-42">
 			<name x="0" y="-76">init_over</name>
+			<label kind="invariant" x="32" y="-25">x &lt;= 1</label>
 		</location>
-		<location id="id25" x="-136" y="-42">
+		<location id="id26" x="-136" y="-42">
 			<name x="-170" y="-76">start</name>
 			<committed/>
 		</location>
-		<init ref="id25"/>
-		<transition id="id26">
+		<init ref="id26"/>
+		<transition id="id27">
 			<source ref="id25"/>
-			<target ref="id24"/>
+			<target ref="id25"/>
+			<label kind="guard" x="60" y="51">x &gt;= 1</label>
+			<label kind="synchronisation" x="60" y="68">tick!</label>
+			<label kind="assignment" x="60" y="85">x = 0</label>
+			<nail x="42" y="85"/>
+			<nail x="238" y="85"/>
+			<nail x="238" y="-42"/>
+		</transition>
+		<transition id="id28">
+			<source ref="id26"/>
+			<target ref="id25"/>
 			<label kind="synchronisation" x="-93" y="-17">init_done!</label>
 			<label kind="assignment" x="-93" y="-34">init_all()</label>
 		</transition>
@@ -485,32 +507,32 @@ pos_t pos() {
 station_t station() {
     return head_sensor_conf[id].station;
 }</declaration>
-		<location id="id27" x="161" y="-59">
+		<location id="id29" x="161" y="-59">
 		</location>
-		<location id="id28" x="-93" y="-59">
+		<location id="id30" x="-93" y="-59">
 			<name x="-136" y="-42">triggered</name>
 		</location>
-		<location id="id29" x="-323" y="-59">
+		<location id="id31" x="-323" y="-59">
 			<name x="-348" y="-42">start</name>
 		</location>
-		<init ref="id29"/>
-		<transition id="id30">
-			<source ref="id29"/>
-			<target ref="id28"/>
+		<init ref="id31"/>
+		<transition id="id32">
+			<source ref="id31"/>
+			<target ref="id30"/>
 			<label kind="synchronisation" x="-272" y="-102">init_done?</label>
 			<label kind="assignment" x="-272" y="-85">gate[belt()] = true</label>
 		</transition>
-		<transition id="id31">
-			<source ref="id27"/>
-			<target ref="id28"/>
+		<transition id="id33">
+			<source ref="id29"/>
+			<target ref="id30"/>
 			<label kind="synchronisation" x="-59" y="-187">free[id]?</label>
 			<label kind="assignment" x="-59" y="-170">gate[belt()] = true</label>
 			<nail x="161" y="-136"/>
 			<nail x="-93" y="-136"/>
 		</transition>
-		<transition id="id32">
-			<source ref="id28"/>
-			<target ref="id27"/>
+		<transition id="id34">
+			<source ref="id30"/>
+			<target ref="id29"/>
 			<label kind="guard" x="-42" y="-51">belts[belt()][pos()]</label>
 			<label kind="synchronisation" x="-42" y="-34">move?</label>
 			<label kind="assignment" x="-42" y="-17">gate[belt()] = false</label>
@@ -533,7 +555,7 @@ system Initializer, Belt, StationV2, Flow, Merge, HeadSensorV2, TailSensorV2;
 		<query>
 			<formula>A[] not deadlock</formula>
 			<comment>Always for all paths the model doesn't incur into deadlock state</comment>
-			<result outcome="success" type="quality" timestamp="2023-06-14 11:50:52 +0200">
+			<result outcome="success" type="quality" timestamp="2023-06-15 12:43:38 +0200">
 			</result>
 		</query>
 		<query>
