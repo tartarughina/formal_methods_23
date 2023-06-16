@@ -34,7 +34,6 @@ typedef struct {
 typedef struct {
     belt_t belt;
     pos_t pos;
-    station_t station;
     error_t error;
 } sensor_config_t;
 
@@ -58,20 +57,20 @@ const station_config_t station_conf[STATIONS] = {
 };
 
 const sensor_config_t head_sensor_conf[HEAD_SENSORS] = {
-  {0, 3, 0, 5},
-  {1, 3, 1, 5},
-  {2, 2, 2, 5},
-  {4, 3, 3, 5},
-  {3, 4, 4, 5},
-  {6, 1, 5, 5}
+  {0, 3, 5},
+  {1, 3, 5},
+  {2, 2, 5},
+  {4, 3, 5},
+  {3, 4, 5},
+  {6, 1, 5}
 };
 
 const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
-    {0, 14, 0, 5},
-    {1, 13, 0, 5},
-    {3, 13, 0, 5},
-    {4, 6, 0, 5},
-    {6, 3, 0, 5}
+    {0, 14, 5},
+    {1, 13, 5},
+    {3, 13, 5},
+    {4, 6, 5},
+    {6, 3, 5}
 };
 
 broadcast chan move, tick, tick_components, init_done;
@@ -562,10 +561,6 @@ pos_t pos() {
 
 error_t error() {
     return head_sensor_conf[id].error;
-}
-
-station_t station() {
-    return head_sensor_conf[id].station;
 }</declaration>
 		<location id="id36" x="408" y="-59">
 		</location>
