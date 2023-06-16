@@ -7,9 +7,6 @@ const int HEAD_SENSORS = 6;
 const int TAIL_SENSORS = 5;
 const int BELTS = 7;
 const int STATIONS = 6;
-const int MERGERS = 1;
-const int FLOW_CONTROLLERS = 1;
-
 const int BELT_SPEED = 1;
 const int MAX_SLOTS = 29;
 
