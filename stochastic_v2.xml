@@ -16,7 +16,7 @@ typedef int[0, TAIL_SENSORS-1] tail_sensor_t;
 typedef int[0, BELTS-1] belt_t;
 typedef int[0, STATIONS-1] station_t;
 typedef int[-1, MAX_SLOTS] pos_t;
-typedef int[1, 100] error_t;
+typedef int[0, 100] error_t;
 
 typedef struct { 
     pos_t head, tail, length;
@@ -45,21 +45,21 @@ const belt_config_t belt_conf[BELTS] = {
 };
 
 const station_config_t station_conf[STATIONS] = {
-    {1, 1, 0, 1},
-    {1, 1, 1, 2},
-    {1, 1, 2, 4},
-    {1, 1, 4, 5},
-    {1, 1, 3, 6},
-    {1, 1, 6, 0}
+    {4, 2, 0, 1},
+    {4, 1, 1, 2},
+    {3, 1, 2, 4},
+    {4, 1, 4, 5},
+    {8, 3, 3, 6},
+    {4, 2, 6, 0}
 };
 
 const sensor_config_t head_sensor_conf[HEAD_SENSORS] = {
-  {0, 3, 5},
-  {1, 3, 5},
-  {2, 2, 5},
-  {4, 3, 5},
-  {3, 4, 5},
-  {6, 1, 5}
+  {0, 3, 1},
+  {1, 3, 3},
+  {2, 2, 2},
+  {4, 3, 4},
+  {3, 4, 1},
+  {6, 1, 2}
 };
 
 const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
@@ -132,9 +132,7 @@ void decrease() {
 		<parameter>const station_t id</parameter>
 		<declaration>clock x;
 bool error = false;
-
-const int t_min = (station_conf[id].mean - station_conf[id].variance) / 3;
-const int t_max = (station_conf[id].mean + station_conf[id].variance) / 3;
+int time_bound;
 
 belt_t input() {
     return station_conf[id].input;
@@ -146,6 +144,12 @@ belt_t output() {
 
 pos_t length() {
     return belt_conf[output()].length;
+}
+
+void processing_time() {
+    time_bound = fint(trunc(random_normal(station_conf[id].mean, sqrt(station_conf[id].variance))));
+    
+    if(time_bound &lt; 0) time_bound = 0;
 }
 
 bool detect_error() {
@@ -174,57 +178,39 @@ void load() {
 		</location>
 		<location id="id3" x="-841" y="-154">
 			<name x="-960" y="-170">processing</name>
-			<label kind="invariant" x="-884" y="-136">x &lt;= t_max</label>
+			<label kind="invariant" x="-901" y="-136">x &lt;= time_bound</label>
 		</location>
-		<location id="id4" x="-399" y="-153">
-			<name x="-458" y="-136">processing_over</name>
+		<location id="id4" x="-518" y="-153">
+			<name x="-577" y="-136">processing_over</name>
 		</location>
-		<location id="id5" x="-400" y="-374">
-			<name x="-451" y="-408">update_sensor</name>
+		<location id="id5" x="-519" y="-374">
+			<name x="-570" y="-408">update_sensor</name>
 			<committed/>
 		</location>
-		<location id="id6" x="-697" y="-153">
-			<label kind="invariant" x="-739" y="-136">x &lt;= t_max</label>
-		</location>
-		<location id="id7" x="-544" y="-153">
-			<label kind="invariant" x="-586" y="-136">x &lt;= t_max</label>
-		</location>
 		<init ref="id2"/>
-		<transition id="id8">
-			<source ref="id7"/>
-			<target ref="id4"/>
-			<label kind="guard" x="-518" y="-178">x &gt;= t_min</label>
-		</transition>
-		<transition id="id9">
-			<source ref="id6"/>
-			<target ref="id7"/>
-			<label kind="guard" x="-671" y="-178">x &gt;= t_min</label>
-			<label kind="assignment" x="-646" y="-153">x = 0</label>
-		</transition>
-		<transition id="id10">
+		<transition id="id6">
 			<source ref="id3"/>
-			<target ref="id6"/>
-			<label kind="guard" x="-816" y="-178">x &gt;= t_min</label>
-			<label kind="assignment" x="-799" y="-153">x = 0</label>
+			<target ref="id4"/>
+			<label kind="guard" x="-748" y="-178">x &gt;= time_bound</label>
 		</transition>
-		<transition id="id11">
+		<transition id="id7">
 			<source ref="id5"/>
 			<target ref="id2"/>
-			<label kind="synchronisation" x="-663" y="-425">free[id]!</label>
-			<label kind="assignment" x="-663" y="-408">offload()</label>
+			<label kind="synchronisation" x="-722" y="-425">free[id]!</label>
+			<label kind="assignment" x="-722" y="-408">offload()</label>
 		</transition>
-		<transition id="id12">
+		<transition id="id8">
 			<source ref="id4"/>
 			<target ref="id5"/>
-			<label kind="guard" x="-391" y="-289">!wait[output()]</label>
-			<label kind="synchronisation" x="-391" y="-272">move?</label>
+			<label kind="guard" x="-510" y="-289">!wait[output()]</label>
+			<label kind="synchronisation" x="-510" y="-272">move?</label>
 		</transition>
-		<transition id="id13">
+		<transition id="id9">
 			<source ref="id2"/>
 			<target ref="id3"/>
 			<label kind="guard" x="-833" y="-297">belts[input()][0]</label>
 			<label kind="synchronisation" x="-833" y="-280">tick_components?</label>
-			<label kind="assignment" x="-833" y="-263">x = 0, load()</label>
+			<label kind="assignment" x="-833" y="-263">x = 0, load(), processing_time()</label>
 		</transition>
 	</template>
 	<template>
@@ -249,49 +235,49 @@ void update() {
 void malfunction() {
     wait[belt()] = !belts[belt()][pos()];
 }</declaration>
-		<location id="id14" x="-76" y="-76">
+		<location id="id10" x="-76" y="-76">
 			<name x="-102" y="-110">start</name>
 		</location>
-		<location id="id15" x="-76" y="93">
+		<location id="id11" x="-76" y="93">
 			<committed/>
 		</location>
-		<location id="id16" x="-76" y="238">
+		<location id="id12" x="-76" y="238">
 			<name x="-136" y="255">malfunctioning</name>
 		</location>
-		<location id="id17" x="170" y="93">
+		<location id="id13" x="170" y="93">
 			<name x="144" y="59">working</name>
 		</location>
-		<branchpoint id="id18" x="170" y="238"/>
-		<init ref="id14"/>
-		<transition id="id19">
-			<source ref="id17"/>
-			<target ref="id15"/>
+		<branchpoint id="id14" x="170" y="238"/>
+		<init ref="id10"/>
+		<transition id="id15">
+			<source ref="id13"/>
+			<target ref="id11"/>
 			<label kind="synchronisation" x="8" y="51">move?</label>
 			<label kind="assignment" x="8" y="68">update()</label>
 		</transition>
-		<transition id="id20">
-			<source ref="id16"/>
-			<target ref="id15"/>
+		<transition id="id16">
+			<source ref="id12"/>
+			<target ref="id11"/>
 			<label kind="synchronisation" x="-68" y="178">move?</label>
 			<label kind="assignment" x="-68" y="195">malfunction()</label>
 		</transition>
-		<transition id="id21">
-			<source ref="id18"/>
-			<target ref="id17"/>
+		<transition id="id17">
+			<source ref="id14"/>
+			<target ref="id13"/>
 			<label kind="probability" x="178" y="161">100 - error()</label>
 		</transition>
-		<transition id="id22">
-			<source ref="id18"/>
-			<target ref="id16"/>
+		<transition id="id18">
+			<source ref="id14"/>
+			<target ref="id12"/>
 			<label kind="probability" x="34" y="246">error()</label>
 		</transition>
-		<transition id="id23" controllable="false">
-			<source ref="id15"/>
-			<target ref="id18"/>
+		<transition id="id19" controllable="false">
+			<source ref="id11"/>
+			<target ref="id14"/>
 		</transition>
-		<transition id="id24">
-			<source ref="id14"/>
-			<target ref="id15"/>
+		<transition id="id20">
+			<source ref="id10"/>
+			<target ref="id11"/>
 			<label kind="synchronisation" x="-68" y="-17">init_done?</label>
 			<label kind="assignment" x="-68" y="0">update()</label>
 		</transition>
@@ -347,13 +333,13 @@ void switchBelt() {
             branch = !branch;
         }
 }</declaration>
-		<location id="id25" x="-34" y="-68">
+		<location id="id21" x="-34" y="-68">
 			<name x="-68" y="-102">wait_piece</name>
 		</location>
-		<init ref="id25"/>
-		<transition id="id26">
-			<source ref="id25"/>
-			<target ref="id25"/>
+		<init ref="id21"/>
+		<transition id="id22">
+			<source ref="id21"/>
+			<target ref="id21"/>
 			<label kind="guard" x="76" y="-51">belts[belt][pos] &amp;&amp; !error</label>
 			<label kind="synchronisation" x="76" y="-34">tick_components?</label>
 			<label kind="assignment" x="76" y="-17">switchBelt()</label>
@@ -476,34 +462,34 @@ void add_last() {
     belts[id][length()-1] += 1;
 }
 */</declaration>
-		<location id="id27" x="501" y="-59">
+		<location id="id23" x="501" y="-59">
 			<name x="484" y="-93">start</name>
 		</location>
-		<location id="id28" x="280" y="-59">
+		<location id="id24" x="280" y="-59">
 			<label kind="invariant" x="270" y="-42">x &lt;=BELT_SPEED</label>
 		</location>
-		<location id="id29" x="51" y="-59">
+		<location id="id25" x="51" y="-59">
 			<committed/>
 		</location>
-		<init ref="id27"/>
-		<transition id="id30">
-			<source ref="id29"/>
-			<target ref="id28"/>
+		<init ref="id23"/>
+		<transition id="id26">
+			<source ref="id25"/>
+			<target ref="id24"/>
 			<label kind="synchronisation" x="110" y="-238">move!</label>
 			<label kind="assignment" x="110" y="-221">move_belt(),
 x = 0</label>
 			<nail x="51" y="-170"/>
 			<nail x="280" y="-170"/>
 		</transition>
-		<transition id="id31">
-			<source ref="id28"/>
-			<target ref="id29"/>
+		<transition id="id27">
+			<source ref="id24"/>
+			<target ref="id25"/>
 			<label kind="guard" x="119" y="-51">x&gt;=BELT_SPEED</label>
 			<label kind="synchronisation" x="110" y="-34">tick_components!</label>
 		</transition>
-		<transition id="id32">
-			<source ref="id27"/>
-			<target ref="id28"/>
+		<transition id="id28">
+			<source ref="id23"/>
+			<target ref="id24"/>
 			<label kind="synchronisation" x="348" y="-59">init_done?</label>
 		</transition>
 	</template>
@@ -530,17 +516,17 @@ x = 0</label>
 }
 
 </declaration>
-		<location id="id33" x="42" y="-42">
+		<location id="id29" x="42" y="-42">
 			<name x="0" y="-76">init_over</name>
 		</location>
-		<location id="id34" x="-136" y="-42">
+		<location id="id30" x="-136" y="-42">
 			<name x="-170" y="-76">start</name>
 			<committed/>
 		</location>
-		<init ref="id34"/>
-		<transition id="id35">
-			<source ref="id34"/>
-			<target ref="id33"/>
+		<init ref="id30"/>
+		<transition id="id31">
+			<source ref="id30"/>
+			<target ref="id29"/>
 			<label kind="synchronisation" x="-93" y="-17">init_done!</label>
 			<label kind="assignment" x="-93" y="-34">init_all()</label>
 		</transition>
@@ -559,70 +545,70 @@ pos_t pos() {
 error_t error() {
     return head_sensor_conf[id].error;
 }</declaration>
-		<location id="id36" x="408" y="-59">
+		<location id="id32" x="408" y="-59">
 		</location>
-		<location id="id37" x="-93" y="-59">
+		<location id="id33" x="-93" y="-59">
 			<name x="-136" y="-42">triggered</name>
 			<committed/>
 		</location>
-		<location id="id38" x="-323" y="-59">
+		<location id="id34" x="-323" y="-59">
 			<name x="-348" y="-42">start</name>
 		</location>
-		<location id="id39" x="187" y="-161">
+		<location id="id35" x="187" y="-161">
 		</location>
-		<location id="id40" x="178" y="42">
+		<location id="id36" x="178" y="42">
 		</location>
-		<branchpoint id="id41" x="68" y="-59"/>
-		<init ref="id38"/>
-		<transition id="id42">
-			<source ref="id40"/>
-			<target ref="id36"/>
+		<branchpoint id="id37" x="68" y="-59"/>
+		<init ref="id34"/>
+		<transition id="id38">
+			<source ref="id36"/>
+			<target ref="id32"/>
 			<label kind="guard" x="289" y="-8">!belts[belt()][pos()]</label>
 			<label kind="synchronisation" x="289" y="9">move?</label>
 			<label kind="assignment" x="289" y="26">gate[belt()] = false</label>
 		</transition>
-		<transition id="id43">
-			<source ref="id39"/>
-			<target ref="id36"/>
+		<transition id="id39">
+			<source ref="id35"/>
+			<target ref="id32"/>
 			<label kind="guard" x="280" y="-170">belts[belt()][pos()]</label>
 			<label kind="synchronisation" x="280" y="-153">move?</label>
 			<label kind="assignment" x="280" y="-136">gate[belt()] = false</label>
 		</transition>
-		<transition id="id44">
-			<source ref="id39"/>
-			<target ref="id37"/>
+		<transition id="id40">
+			<source ref="id35"/>
+			<target ref="id33"/>
 			<label kind="guard" x="-51" y="-161">!belts[belt()][pos()]</label>
 			<label kind="synchronisation" x="-51" y="-144">move?</label>
 		</transition>
-		<transition id="id45">
-			<source ref="id40"/>
-			<target ref="id37"/>
+		<transition id="id41">
+			<source ref="id36"/>
+			<target ref="id33"/>
 			<label kind="guard" x="-51" y="25">belts[belt()][pos()]</label>
 			<label kind="synchronisation" x="-51" y="42">move?</label>
 		</transition>
-		<transition id="id46">
-			<source ref="id41"/>
-			<target ref="id40"/>
+		<transition id="id42">
+			<source ref="id37"/>
+			<target ref="id36"/>
 			<label kind="probability" x="144" y="-17">error()</label>
 		</transition>
-		<transition id="id47">
-			<source ref="id41"/>
-			<target ref="id39"/>
+		<transition id="id43">
+			<source ref="id37"/>
+			<target ref="id35"/>
 			<label kind="probability" x="136" y="-110">100 - error()</label>
 		</transition>
-		<transition id="id48" controllable="false">
-			<source ref="id37"/>
-			<target ref="id41"/>
-		</transition>
-		<transition id="id49">
-			<source ref="id38"/>
+		<transition id="id44" controllable="false">
+			<source ref="id33"/>
 			<target ref="id37"/>
+		</transition>
+		<transition id="id45">
+			<source ref="id34"/>
+			<target ref="id33"/>
 			<label kind="synchronisation" x="-272" y="-102">init_done?</label>
 			<label kind="assignment" x="-272" y="-85">gate[belt()] = true</label>
 		</transition>
-		<transition id="id50">
-			<source ref="id36"/>
-			<target ref="id37"/>
+		<transition id="id46">
+			<source ref="id32"/>
+			<target ref="id33"/>
 			<label kind="synchronisation" x="-59" y="-255">free[id]?</label>
 			<label kind="assignment" x="-59" y="-238">gate[belt()] = true</label>
 			<nail x="408" y="-204"/>
@@ -646,7 +632,7 @@ system Initializer, Belt, StationV2, Flow, Merge, HeadSensorV2, TailSensorV2;
 		<query>
 			<formula>Pr [&lt;=1000] (&lt;&gt; Initializer.init_over imply exists(i : station_t) StationV2(i).waiting and Belt.check_deadlock(StationV2(i).input()) or exists(j: station_t) StationV2(j).error or Flow.error)</formula>
 			<comment>Eventually the system will incur in a deadlock state where, since the belt is no longer moving pieces, the stations start to load more than one piece onto the same segment or no station is fed with a new piece</comment>
-			<result outcome="success" type="interval" value="≥ 0.950056 (95% CI)" timestamp="2023-06-15 12:16:38 +0200">
+			<result outcome="success" type="interval" value="≥ 0.950056 (95% CI)" timestamp="2023-06-17 22:32:54 +0200">
 				<details>≥ 0.950056 (95% CI)</details>
 				<plot title="Probability Density Distribution" xaxis="run duration in time" yaxis="probability density">
 					<series title="density" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,4.503599627370496E15
@@ -738,7 +724,7 @@ Mean estimate of displayed sample: ≈ 0</comment>
 		<query>
 			<formula>Pr [&lt;=1000] ([] Initializer.init_over imply (sum(x : station_t) not StationV2(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]?1:0) == sum(k : belt_t) belt_conf[k].pieces)</formula>
 			<comment>For all paths, once initilized, the pieces in the system remain the same, so no station is containing more than 1 piece and each segment has at most one piece</comment>
-			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-15 12:23:29 +0200">
+			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-17 22:32:35 +0200">
 				<details>≤ 0.0499441 (95% CI)</details>
 			</result>
 		</query>
@@ -752,21 +738,21 @@ Mean estimate of displayed sample: ≈ 0</comment>
 		<query>
 			<formula>Pr [&lt;=1000] ([] Initializer.init_over imply forall(i :  belt_t) ((sum(j : belt_pos_t) belts[i][j])&lt;=Belt.max_queue(i)))</formula>
 			<comment>For all paths the pieces on the belts are within the queue length once the system in initialized</comment>
-			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-15 11:17:27 +0200">
-				<details>≤ 0.0499441 (95% CI)</details>
+			<result outcome="success" type="quantity" value="0.882813 ± 0.0443422 (95% CI)" timestamp="2023-06-17 22:30:42 +0200">
+				<details>0.882813 ± 0.0443422 (95% CI)</details>
 			</result>
 		</query>
 		<query>
 			<formula>Pr [&lt;=1000] ([] Flow.error)</formula>
 			<comment>For all paths the Flow component throw an error</comment>
-			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-15 12:31:02 +0200">
+			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-17 22:29:45 +0200">
 				<details>≤ 0.0499441 (95% CI)</details>
 			</result>
 		</query>
 		<query>
 			<formula>Pr [&lt;=1000] ([] forall(i : station_t) StationV2(i).error)</formula>
 			<comment>For all paths all the stations reach the error state</comment>
-			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-15 12:26:02 +0200">
+			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-17 22:29:50 +0200">
 				<details>≤ 0.0499441 (95% CI)</details>
 			</result>
 		</query>
@@ -1017,6 +1003,166 @@ sum(x : station_t) not StationV2(x).waiting
 197.0,1.0
 197.0,0.0
 200.000002,0.0
+					</series>
+					<comment/>
+				</plot>
+			</result>
+		</query>
+		<query>
+			<formula>E [&lt;=200;10] (max: StationV2(0).x)</formula>
+			<comment/>
+			<result outcome="success" type="quantity" value="11.2 ± 0.452431 (95% CI)" timestamp="2023-06-17 22:28:44 +0200">
+				<details>11.2 ± 0.452431 (95% CI)</details>
+				<plot title="Probability Density Distribution" xaxis="max: StationV2[0].x" yaxis="probability density">
+					<series title="density" type="b(0.500000)" color="0x0000ff" encoding="csv">10.0,0.2
+10.5,0.0
+11.0,1.2
+11.5,0.0
+12.0,0.6
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.2,0.0
+11.2,1.2
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.5, bucket count=5
+Runs: 10 in total, 10 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [10, 12]
+Mean estimate of displayed sample: 11.2 ± 0.4524 (95% CI)</comment>
+				</plot>
+				<plot title="Probability Distribution" xaxis="max: StationV2[0].x" yaxis="probability">
+					<series title="probability" type="b(0.500000)" color="0x0000ff" encoding="csv">10.0,0.1
+10.5,0.0
+11.0,0.6
+11.5,0.0
+12.0,0.3
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.2,0.0
+11.2,0.6
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.5, bucket count=5
+Runs: 10 in total, 10 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [10, 12]
+Mean estimate of displayed sample: 11.2 ± 0.4524 (95% CI)</comment>
+				</plot>
+				<plot title="Cumulative Probability Distribution" xaxis="max: StationV2[0].x" yaxis="probability">
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">10.0,0.0
+10.5,0.1
+11.0,0.1
+11.5,0.7
+12.0,0.7
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.2,0.0
+11.2,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.5, bucket count=5
+Runs: 10 in total, 10 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [10, 12]
+Mean estimate of displayed sample: 11.2 ± 0.4524 (95% CI)</comment>
+				</plot>
+				<plot title="Cumulative Probability Confidence Intervals" xaxis="max: StationV2[0].x" yaxis="probability">
+					<series title="upper limit" type="k" color="0x0000dd" encoding="csv">10.0,0.30849710781876083
+10.5,0.44501611702819543
+11.0,0.44501611702819543
+11.5,0.9332604888222655
+12.0,0.9332604888222655
+					</series>
+					<series title="lower limit" type="k" color="0xdd0000" encoding="csv">10.0,0.0
+10.5,0.0025285785444617848
+11.0,0.0025285785444617848
+11.5,0.3475471499400027
+12.0,0.3475471499400027
+					</series>
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">10.0,0.0
+10.5,0.1
+11.0,0.1
+11.5,0.7
+12.0,0.7
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.2,0.0
+11.2,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.5, bucket count=5
+Runs: 10 in total, 10 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [10, 12]
+Mean estimate of displayed sample: 11.2 ± 0.4524 (95% CI)</comment>
+				</plot>
+				<plot title="Frequency Histogram" xaxis="max: StationV2[0].x" yaxis="count">
+					<series title="count" type="b(0.500000)" color="0x0000ff" encoding="csv">10.0,1.0
+10.5,0.0
+11.0,6.0
+11.5,0.0
+12.0,3.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.2,0.0
+11.2,6.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.5, bucket count=5
+Runs: 10 in total, 10 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [10, 12]
+Mean estimate of displayed sample: 11.2 ± 0.4524 (95% CI)</comment>
+				</plot>
+			</result>
+		</query>
+		<query>
+			<formula>simulate [&lt;=100] {
+	StationV2(0).x,
+	StationV2(1).x
+}</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2023-06-17 22:29:14 +0200">
+				<plot title="Simulations (1)" xaxis="time" yaxis="value">
+					<series title="StationV2[0].x" type="l" color="0xff0000" encoding="csv">0.0,0.0
+4.0,4.0
+4.0,0.0
+13.0,9.0
+13.0,0.0
+22.0,9.0
+22.0,0.0
+28.0,6.0
+28.0,0.0
+36.0,8.0
+36.0,0.0
+46.0,10.0
+46.0,0.0
+57.0,11.0
+57.0,0.0
+66.0,9.0
+66.0,0.0
+74.0,8.0
+74.0,0.0
+80.0,6.0
+80.0,0.0
+89.0,9.0
+89.0,0.0
+97.0,8.0
+97.0,0.0
+100.000002,3.000002
+					</series>
+					<series title="StationV2[1].x" type="l" color="0x00ffff" encoding="csv">0.0,0.0
+4.0,4.0
+4.0,0.0
+10.0,6.0
+10.0,0.0
+20.0,10.0
+20.0,0.0
+29.0,9.0
+29.0,0.0
+38.0,9.0
+38.0,0.0
+45.0,7.0
+45.0,0.0
+55.0,10.0
+55.0,0.0
+63.0,8.0
+63.0,0.0
+70.0,7.0
+70.0,0.0
+81.0,11.0
+81.0,0.0
+89.0,8.0
+89.0,0.0
+97.0,8.0
+97.0,0.0
+100.000002,3.000002
 					</series>
 					<comment/>
 				</plot>
