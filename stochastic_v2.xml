@@ -757,6 +757,13 @@ Mean estimate of displayed sample: ≈ 0</comment>
 			</result>
 		</query>
 		<query>
+			<formula>Pr [&lt;=1000] ([] Initializer.init_over imply forall(i : station_t) not StationV2(i).waiting imply belts[StationV2(i).input()][0] == 0)</formula>
+			<comment/>
+			<result outcome="success" type="quantity" value="0.25298 ± 0.0477568 (95% CI)" timestamp="2023-06-17 23:43:21 +0200">
+				<details>0.25298 ± 0.0477568 (95% CI)</details>
+			</result>
+		</query>
+		<query>
 			<formula>simulate [&lt;=200] {
 sum(k : belt_t) belt_conf[k].pieces,
 sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j],

@@ -544,6 +544,12 @@ system Initializer, Belt, StationV2, Flow, Merge, HeadSensorV2, TailSensorV2;
 			</result>
 		</query>
 		<query>
+			<formula>A[] (Initializer.init_over imply forall(i : station_t) not StationV2(i).waiting imply belts[StationV2(i).input()][0] == 0)</formula>
+			<comment>For all paths when a station is processing the slot before it is always free of pieces aka the station never process more than one piece at a time</comment>
+			<result outcome="success" type="quality" timestamp="2023-06-17 23:40:18 +0200">
+			</result>
+		</query>
+		<query>
 			<formula>simulate [&lt;=200] {
 sum(k : belt_t) belt_conf[k].pieces,
 sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j],
