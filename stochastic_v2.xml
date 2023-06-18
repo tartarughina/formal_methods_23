@@ -761,137 +761,52 @@ system Initializer, Belt, StationV2, Flow, Merge, HeadSensorV2, TailSensorV2;
 </system>
 	<queries>
 		<query>
-			<formula>Pr [&lt;=1000] (&lt;&gt; Initializer.init_over imply exists(i : station_t) StationV2(i).waiting and Belt.check_deadlock(StationV2(i).input()) or exists(j: station_t) StationV2(j).error or Flow.error)</formula>
+			<formula>Pr [&lt;=1000; 100] ([] Initializer.init_over imply exists(i : station_t) StationV2(i).waiting and Belt.check_deadlock(StationV2(i).input()) or exists(j: station_t) StationV2(j).error or Flow.error)</formula>
 			<comment>Eventually the system will incur in a deadlock state where, since the belt is no longer moving pieces, the stations start to load more than one piece onto the same segment or no station is fed with a new piece</comment>
-			<result outcome="success" type="interval" value="≥ 0.950056 (95% CI)" timestamp="2023-06-17 22:32:54 +0200">
-				<details>≥ 0.950056 (95% CI)</details>
-				<plot title="Probability Density Distribution" xaxis="run duration in time" yaxis="probability density">
-					<series title="density" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,4.503599627370496E15
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
-0.0,4.503599627370496E15
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
-Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [0, 0]
-Mean estimate of displayed sample: ≈ 0</comment>
-				</plot>
-				<plot title="Probability Density Confidence Intervals" xaxis="run duration in time" yaxis="probability density">
-					<series title="upper limit" type="b(0.000000)" color="0xa0a0ff" encoding="csv">0.0,1.0
-					</series>
-					<series title="lower limit" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,0.9500559162941453
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
-0.0,4.503599627370496E15
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
-Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [0, 0]
-Mean estimate of displayed sample: ≈ 0</comment>
-				</plot>
-				<plot title="Probability Distribution" xaxis="run duration in time" yaxis="probability">
-					<series title="probability" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,1.0
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
-0.0,1.0
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
-Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [0, 0]
-Mean estimate of displayed sample: ≈ 0</comment>
-				</plot>
-				<plot title="Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
-					<series title="upper limit" type="b(0.000000)" color="0xa0a0ff" encoding="csv">0.0,1.0
-					</series>
-					<series title="lower limit" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,0.9500559162941453
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
-0.0,1.0
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
-Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [0, 0]
-Mean estimate of displayed sample: ≈ 0</comment>
-				</plot>
-				<plot title="Cumulative Probability Distribution" xaxis="run duration in time" yaxis="probability">
-					<series title="cumulative" type="l" color="0x000000" encoding="csv">0.0,0.0
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
-0.0,1.0
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
-Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [0, 0]
-Mean estimate of displayed sample: ≈ 0</comment>
-				</plot>
-				<plot title="Cumulative Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
-					<series title="upper limit" type="k" color="0x0000dd" encoding="csv">0.0,0.04994408370585468
-					</series>
-					<series title="lower limit" type="k" color="0xdd0000" encoding="csv">0.0,0.0
-					</series>
-					<series title="cumulative" type="l" color="0x000000" encoding="csv">0.0,0.0
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
-0.0,1.0
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
-Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [0, 0]
-Mean estimate of displayed sample: ≈ 0</comment>
-				</plot>
-				<plot title="Frequency Histogram" xaxis="run duration in time" yaxis="count">
-					<series title="count" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,72.0
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
-0.0,72.0
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
-Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [0, 0]
-Mean estimate of displayed sample: ≈ 0</comment>
-				</plot>
+			<result outcome="success" type="interval" value="≤ 0.0362167 (95% CI)" timestamp="2023-06-18 23:04:06 +0200">
+				<details>≤ 0.0362167 (95% CI)</details>
 			</result>
 		</query>
 		<query>
-			<formula>Pr [&lt;=1000] ([] Initializer.init_over imply (sum(x : station_t) not StationV2(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]?1:0) == sum(k : belt_t) belt_conf[k].pieces)</formula>
+			<formula>Pr [&lt;=1000; 100] ([] Initializer.init_over imply (sum(x : station_t) not StationV2(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]?1:0) == sum(k : belt_t) belt_conf[k].pieces)</formula>
 			<comment>For all paths, once initilized, the pieces in the system remain the same, so no station is containing more than 1 piece and each segment has at most one piece</comment>
-			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-17 22:32:35 +0200">
-				<details>≤ 0.0499441 (95% CI)</details>
+			<result outcome="success" type="interval" value="≤ 0.0362167 (95% CI)" timestamp="2023-06-18 23:04:11 +0200">
+				<details>≤ 0.0362167 (95% CI)</details>
 			</result>
 		</query>
 		<query>
-			<formula>Pr [&lt;=1000] ([] Initializer.init_over imply forall(i : belt_t) forall(j : belt_pos_t) 0 &lt;= belts[i][j] &lt; 2)</formula>
+			<formula>Pr [&lt;=1000; 100] ([] Initializer.init_over imply forall(i : belt_t) forall(j : belt_pos_t) 0 &lt;= belts[i][j] &lt; 2)</formula>
 			<comment>For all paths the segments of the belt hold only one piece</comment>
-			<result outcome="success" type="interval" value="≥ 0.950056 (95% CI)" timestamp="2023-06-15 12:29:24 +0200">
-				<details>≥ 0.950056 (95% CI)</details>
+			<result outcome="success" type="interval" value="≥ 0.963783 (95% CI)" timestamp="2023-06-18 23:04:22 +0200">
+				<details>≥ 0.963783 (95% CI)</details>
 			</result>
 		</query>
 		<query>
-			<formula>Pr [&lt;=1000] ([] Initializer.init_over imply forall(i :  belt_t) ((sum(j : belt_pos_t) belts[i][j])&lt;=Belt.max_queue(i)))</formula>
+			<formula>Pr [&lt;=1000; 100] ([] Initializer.init_over imply forall(i :  belt_t) ((sum(j : belt_pos_t) belts[i][j])&lt;=Belt.max_queue(i)))</formula>
 			<comment>For all paths the pieces on the belts are within the queue length once the system in initialized</comment>
-			<result outcome="success" type="quantity" value="0.882813 ± 0.0443422 (95% CI)" timestamp="2023-06-17 22:30:42 +0200">
-				<details>0.882813 ± 0.0443422 (95% CI)</details>
+			<result outcome="success" type="interval" value="≤ 0.0362167 (95% CI)" timestamp="2023-06-18 23:04:29 +0200">
+				<details>≤ 0.0362167 (95% CI)</details>
 			</result>
 		</query>
 		<query>
-			<formula>Pr [&lt;=1000] ([] Flow.error)</formula>
+			<formula>Pr [&lt;=1000; 100] ([] Flow.error)</formula>
 			<comment>For all paths the Flow component throw an error</comment>
-			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-17 22:29:45 +0200">
-				<details>≤ 0.0499441 (95% CI)</details>
+			<result outcome="success" type="interval" value="≤ 0.0362167 (95% CI)" timestamp="2023-06-18 23:04:34 +0200">
+				<details>≤ 0.0362167 (95% CI)</details>
 			</result>
 		</query>
 		<query>
-			<formula>Pr [&lt;=1000] ([] forall(i : station_t) StationV2(i).error)</formula>
+			<formula>Pr [&lt;=1000; 100] ([] forall(i : station_t) StationV2(i).error)</formula>
 			<comment>For all paths all the stations reach the error state</comment>
-			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-17 22:29:50 +0200">
-				<details>≤ 0.0499441 (95% CI)</details>
+			<result outcome="success" type="interval" value="≤ 0.0362167 (95% CI)" timestamp="2023-06-18 23:04:39 +0200">
+				<details>≤ 0.0362167 (95% CI)</details>
 			</result>
 		</query>
 		<query>
-			<formula>Pr [&lt;=1000] ([] Initializer.init_over imply forall(i : station_t) not StationV2(i).waiting imply belts[StationV2(i).input()][0] == 0)</formula>
-			<comment/>
-			<result outcome="success" type="quantity" value="0.25298 ± 0.0477568 (95% CI)" timestamp="2023-06-17 23:43:21 +0200">
-				<details>0.25298 ± 0.0477568 (95% CI)</details>
+			<formula>Pr [&lt;=1000; 100] ([] Initializer.init_over imply forall(i : station_t) not StationV2(i).waiting imply belts[StationV2(i).input()][0] == 0)</formula>
+			<comment>For all paths if station is processing no piece can reach it</comment>
+			<result outcome="failure" type="quantity" value="0.45152 ± 0.1012 (95% CI)" timestamp="2023-06-18 23:04:46 +0200">
+				<details>0.45152 ± 0.1012 (95% CI)</details>
 			</result>
 		</query>
 		<query>
@@ -1147,96 +1062,96 @@ sum(x : station_t) not StationV2(x).waiting
 			</result>
 		</query>
 		<query>
-			<formula>E [&lt;=200;10] (max: StationV2(0).x)</formula>
+			<formula>E [&lt;=50;10] (max: StationV2(0).x)</formula>
 			<comment/>
-			<result outcome="success" type="quantity" value="11.2 ± 0.452431 (95% CI)" timestamp="2023-06-17 22:28:44 +0200">
-				<details>11.2 ± 0.452431 (95% CI)</details>
+			<result outcome="success" type="quantity" value="12 ± 0.953809 (95% CI)" timestamp="2023-06-18 23:02:05 +0200">
+				<details>12 ± 0.953809 (95% CI)</details>
 				<plot title="Probability Density Distribution" xaxis="max: StationV2[0].x" yaxis="probability density">
-					<series title="density" type="b(0.500000)" color="0x0000ff" encoding="csv">10.0,0.2
-10.5,0.0
-11.0,1.2
-11.5,0.0
-12.0,0.6
+					<series title="density" type="b(1.250000)" color="0x0000ff" encoding="csv">10.0,0.24
+11.25,0.4
+12.5,0.08
+13.75,0.0
+15.0,0.08
 					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.2,0.0
-11.2,1.2
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">12.0,0.0
+12.0,0.4
 					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.5, bucket count=5
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.25, bucket count=5
 Runs: 10 in total, 10 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [10, 12]
-Mean estimate of displayed sample: 11.2 ± 0.4524 (95% CI)</comment>
+Span of displayed sample: [10, 15]
+Mean estimate of displayed sample: 12 ± 0.9538 (95% CI)</comment>
 				</plot>
 				<plot title="Probability Distribution" xaxis="max: StationV2[0].x" yaxis="probability">
-					<series title="probability" type="b(0.500000)" color="0x0000ff" encoding="csv">10.0,0.1
-10.5,0.0
-11.0,0.6
-11.5,0.0
-12.0,0.3
+					<series title="probability" type="b(1.250000)" color="0x0000ff" encoding="csv">10.0,0.3
+11.25,0.5
+12.5,0.1
+13.75,0.0
+15.0,0.1
 					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.2,0.0
-11.2,0.6
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">12.0,0.0
+12.0,0.5
 					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.5, bucket count=5
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.25, bucket count=5
 Runs: 10 in total, 10 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [10, 12]
-Mean estimate of displayed sample: 11.2 ± 0.4524 (95% CI)</comment>
+Span of displayed sample: [10, 15]
+Mean estimate of displayed sample: 12 ± 0.9538 (95% CI)</comment>
 				</plot>
 				<plot title="Cumulative Probability Distribution" xaxis="max: StationV2[0].x" yaxis="probability">
 					<series title="cumulative" type="l" color="0x000000" encoding="csv">10.0,0.0
-10.5,0.1
-11.0,0.1
-11.5,0.7
-12.0,0.7
+11.25,0.3
+12.5,0.8
+13.75,0.9
+15.0,0.9
 					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.2,0.0
-11.2,1.0
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">12.0,0.0
+12.0,1.0
 					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.5, bucket count=5
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.25, bucket count=5
 Runs: 10 in total, 10 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [10, 12]
-Mean estimate of displayed sample: 11.2 ± 0.4524 (95% CI)</comment>
+Span of displayed sample: [10, 15]
+Mean estimate of displayed sample: 12 ± 0.9538 (95% CI)</comment>
 				</plot>
 				<plot title="Cumulative Probability Confidence Intervals" xaxis="max: StationV2[0].x" yaxis="probability">
 					<series title="upper limit" type="k" color="0x0000dd" encoding="csv">10.0,0.30849710781876083
-10.5,0.44501611702819543
-11.0,0.44501611702819543
-11.5,0.9332604888222655
-12.0,0.9332604888222655
+11.25,0.6524528500599973
+12.5,0.9747892736731666
+13.75,0.9974714214555382
+15.0,0.9974714214555382
 					</series>
 					<series title="lower limit" type="k" color="0xdd0000" encoding="csv">10.0,0.0
-10.5,0.0025285785444617848
-11.0,0.0025285785444617848
-11.5,0.3475471499400027
-12.0,0.3475471499400027
+11.25,0.06673951117773447
+12.5,0.44390453769235844
+13.75,0.5549838829718046
+15.0,0.5549838829718046
 					</series>
 					<series title="cumulative" type="l" color="0x000000" encoding="csv">10.0,0.0
-10.5,0.1
-11.0,0.1
-11.5,0.7
-12.0,0.7
+11.25,0.3
+12.5,0.8
+13.75,0.9
+15.0,0.9
 					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.2,0.0
-11.2,1.0
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">12.0,0.0
+12.0,1.0
 					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.5, bucket count=5
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.25, bucket count=5
 Runs: 10 in total, 10 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [10, 12]
-Mean estimate of displayed sample: 11.2 ± 0.4524 (95% CI)</comment>
+Span of displayed sample: [10, 15]
+Mean estimate of displayed sample: 12 ± 0.9538 (95% CI)</comment>
 				</plot>
 				<plot title="Frequency Histogram" xaxis="max: StationV2[0].x" yaxis="count">
-					<series title="count" type="b(0.500000)" color="0x0000ff" encoding="csv">10.0,1.0
-10.5,0.0
-11.0,6.0
-11.5,0.0
-12.0,3.0
+					<series title="count" type="b(1.250000)" color="0x0000ff" encoding="csv">10.0,3.0
+11.25,5.0
+12.5,1.0
+13.75,0.0
+15.0,1.0
 					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">11.2,0.0
-11.2,6.0
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">12.0,0.0
+12.0,5.0
 					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=0.5, bucket count=5
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.25, bucket count=5
 Runs: 10 in total, 10 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [10, 12]
-Mean estimate of displayed sample: 11.2 ± 0.4524 (95% CI)</comment>
+Span of displayed sample: [10, 15]
+Mean estimate of displayed sample: 12 ± 0.9538 (95% CI)</comment>
 				</plot>
 			</result>
 		</query>
