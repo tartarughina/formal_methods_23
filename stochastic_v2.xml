@@ -7,7 +7,6 @@ const int HEAD_SENSORS = 6;
 const int TAIL_SENSORS = 5;
 const int BELTS = 7;
 const int STATIONS = 6;
-const int BELT_SPEED = 1;
 const int MAX_SLOTS = 29;
 
 typedef int[0, MAX_SLOTS-1] belt_pos_t;
@@ -34,6 +33,20 @@ typedef struct {
     error_t error;
 } sensor_config_t;
 
+broadcast chan move, tick, tick_components, init_done;
+broadcast chan free[STATIONS];
+ 
+int[0,2] belts[BELTS][MAX_SLOTS];
+bool gate[BELTS]; // true --&gt; let flow | false --&gt; block pieces
+bool wait[BELTS]; 
+
+// CONFIGURATIONS
+
+// FIRST CONFIGURATION
+// quick belt, slow stations, low error weight
+const int BELT_SPEED = 1;
+
+// head position, tail position, length, pieces to be loaded
 const belt_config_t belt_conf[BELTS] = {
     {3, 14, 17, 12}, 
     {3, 13, 20, 10},
@@ -44,15 +57,109 @@ const belt_config_t belt_conf[BELTS] = {
     {1, 3, 10, 0}
 };
 
+// mean processing time, variance processing time, input belt, output belt
 const station_config_t station_conf[STATIONS] = {
-    {4, 2, 0, 1},
-    {4, 1, 1, 2},
-    {3, 1, 2, 4},
+    {6, 2, 0, 1},
+    {6, 1, 1, 2},
+    {4, 1, 2, 4},
     {4, 1, 4, 5},
-    {8, 3, 3, 6},
-    {4, 2, 6, 0}
+    {7, 2, 3, 6},
+    {7, 2, 6, 0}
 };
 
+// belt, position on the belt, error weight
+const sensor_config_t head_sensor_conf[HEAD_SENSORS] = {
+  {0, 3, 2},
+  {1, 3, 2},
+  {2, 2, 2},
+  {4, 3, 2},
+  {3, 4, 2},
+  {6, 1, 2}
+};
+
+// belt, position on the belt, error weight
+const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
+    {0, 14, 2},
+    {1, 13, 2},
+    {3, 13, 2},
+    {4, 6, 2},
+    {6, 3, 2}
+};
+
+/*
+
+// SECOND CONFIGURATION
+const int BELT_SPEED = 1;
+
+// quick belt, slow station, high error weight
+
+// head position, tail position, length, pieces to be loaded
+const belt_config_t belt_conf[BELTS] = {
+    {3, 14, 17, 12}, 
+    {3, 13, 20, 10},
+    {2, -1, 29, 0},
+    {4, 13, 16, 0},
+    {3, 6, 8, 0},
+    {-1, -1, 5, 0},
+    {1, 3, 10, 0}
+};
+
+// mean processing time, variance processing time, input belt, output belt
+const station_config_t station_conf[STATIONS] = {
+    {6, 2, 0, 1},
+    {6, 1, 1, 2},
+    {4, 1, 2, 4},
+    {4, 1, 4, 5},
+    {7, 2, 3, 6},
+    {7, 2, 6, 0}
+};
+
+// belt, position on the belt, error weight
+const sensor_config_t head_sensor_conf[HEAD_SENSORS] = {
+  {0, 3, 15},
+  {1, 3, 15},
+  {2, 2, 15},
+  {4, 3, 15},
+  {3, 4, 15},
+  {6, 1, 15}
+};
+
+// belt, position on the belt, error weight
+const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
+    {0, 14, 15},
+    {1, 13, 15},
+    {3, 13, 15},
+    {4, 6, 15},
+    {6, 3, 15}
+};
+
+// THIRD CONFIGURATION
+const int BELT_SPEED = 6;
+
+// slow belt, quick station, low error weight
+
+// head position, tail position, length, pieces to be loaded
+const belt_config_t belt_conf[BELTS] = {
+    {3, 14, 17, 12}, 
+    {3, 13, 20, 10},
+    {2, -1, 29, 0},
+    {4, 13, 16, 0},
+    {3, 6, 8, 0},
+    {-1, -1, 5, 0},
+    {1, 3, 10, 0}
+};
+
+// mean processing time, variance processing time, input belt, output belt
+const station_config_t station_conf[STATIONS] = {
+    {3, 1, 0, 1},
+    {3, 1, 1, 2},
+    {2, 1, 2, 4},
+    {2, 1, 4, 5},
+    {4, 2, 3, 6},
+    {3, 1, 6, 0}
+};
+
+// belt, position on the belt, error weight
 const sensor_config_t head_sensor_conf[HEAD_SENSORS] = {
   {0, 3, 1},
   {1, 3, 3},
@@ -62,6 +169,7 @@ const sensor_config_t head_sensor_conf[HEAD_SENSORS] = {
   {6, 1, 2}
 };
 
+// belt, position on the belt, error weight
 const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
     {0, 14, 5},
     {1, 13, 5},
@@ -70,14 +178,52 @@ const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
     {6, 3, 5}
 };
 
-broadcast chan move, tick, tick_components, init_done;
-broadcast chan free[STATIONS];
- 
-int[0,2] belts[BELTS][MAX_SLOTS];
-// gate: true --&gt; open
-// gate: false --&gt; closed
-bool gate[BELTS];
-bool wait[BELTS];
+// FOURTH CONFIGURATION
+const int BELT_SPEED = 6;
+
+// slow belt, quick station, high error weight
+
+// head position, tail position, length, pieces to be loaded
+const belt_config_t belt_conf[BELTS] = {
+    {3, 14, 17, 12}, 
+    {3, 13, 20, 10},
+    {2, -1, 29, 0},
+    {4, 13, 16, 0},
+    {3, 6, 8, 0},
+    {-1, -1, 5, 0},
+    {1, 3, 10, 0}
+};
+
+// mean processing time, variance processing time, input belt, output belt
+const station_config_t station_conf[STATIONS] = {
+    {3, 1, 0, 1},
+    {3, 1, 1, 2},
+    {2, 1, 2, 4},
+    {2, 1, 4, 5},
+    {4, 2, 3, 6},
+    {3, 1, 6, 0}
+};
+
+// belt, position on the belt, error weight
+const sensor_config_t head_sensor_conf[HEAD_SENSORS] = {
+  {0, 3, 15},
+  {1, 3, 15},
+  {2, 2, 15},
+  {4, 3, 15},
+  {3, 4, 15},
+  {6, 1, 15}
+};
+
+// belt, position on the belt, error weight
+const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
+    {0, 14, 15},
+    {1, 13, 15},
+    {3, 13, 15},
+    {4, 6, 15},
+    {6, 3, 15}
+};
+
+*/
 
 // TOTAL PIECES
 // sum(k : belt_t) belt_conf[k].pieces
@@ -89,22 +235,7 @@ bool wait[BELTS];
 
 // PIECES ON BELT
 // sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]
-//int pieces_on_belt = 0;
-
-// inc/dec pieces under processing
-/*
-void increase() {
-    processing_pieces++;
-    
-    pieces_on_belt--;
-}
-
-void decrease() {
-    processing_pieces--;
-    
-    pieces_on_belt++;
-}
-*/</declaration>
+//int pieces_on_belt = 0;</declaration>
 	<template>
 		<name>MergerV2</name>
 		<parameter>const belt_t belt, const pos_t pos, const belt_t other</parameter>
