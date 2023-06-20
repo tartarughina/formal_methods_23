@@ -42,6 +42,8 @@ bool wait[BELTS];
 
 // CONFIGURATIONS
 
+/*
+
 // FIRST CONFIGURATION
 // quick belt, slow stations, low error weight
 const int BELT_SPEED = 1;
@@ -86,7 +88,6 @@ const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
     {6, 3, 2}
 };
 
-/*
 
 // SECOND CONFIGURATION
 const int BELT_SPEED = 1;
@@ -133,6 +134,8 @@ const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
     {6, 3, 15}
 };
 
+*/
+/*
 // THIRD CONFIGURATION
 const int BELT_SPEED = 6;
 
@@ -178,6 +181,7 @@ const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
     {6, 3, 5}
 };
 
+*/
 // FOURTH CONFIGURATION
 const int BELT_SPEED = 6;
 
@@ -223,7 +227,6 @@ const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
     {6, 3, 15}
 };
 
-*/
 
 // TOTAL PIECES
 // sum(k : belt_t) belt_conf[k].pieces
@@ -761,464 +764,311 @@ system Initializer, Belt, StationV2, Flow, Merge, HeadSensorV2, TailSensorV2;
 </system>
 	<queries>
 		<query>
-			<formula>Pr [&lt;=1000; 100] ([] Initializer.init_over imply exists(i : station_t) StationV2(i).waiting and Belt.check_deadlock(StationV2(i).input()) or exists(j: station_t) StationV2(j).error or Flow.error)</formula>
+			<formula>Pr [&lt;=10000] ([] Initializer.init_over imply not ((exists(i : station_t) StationV2(i).waiting and Belt.check_deadlock(StationV2(i).input())) or exists(j: station_t) StationV2(j).error or Flow.error))</formula>
 			<comment>Eventually the system will incur in a deadlock state where, since the belt is no longer moving pieces, the stations start to load more than one piece onto the same segment or no station is fed with a new piece</comment>
-			<result outcome="success" type="interval" value="≤ 0.0362167 (95% CI)" timestamp="2023-06-18 23:04:06 +0200">
-				<details>≤ 0.0362167 (95% CI)</details>
+			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-20 22:54:48 +0200">
+				<details>≤ 0.0499441 (95% CI)</details>
 			</result>
 		</query>
 		<query>
-			<formula>Pr [&lt;=1000; 100] ([] Initializer.init_over imply (sum(x : station_t) not StationV2(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]?1:0) == sum(k : belt_t) belt_conf[k].pieces)</formula>
+			<formula>Pr [&lt;=10000] ([] Initializer.init_over imply (sum(x : station_t) not StationV2(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]?1:0) == sum(k : belt_t) belt_conf[k].pieces)</formula>
 			<comment>For all paths, once initilized, the pieces in the system remain the same, so no station is containing more than 1 piece and each segment has at most one piece</comment>
-			<result outcome="success" type="interval" value="≤ 0.0362167 (95% CI)" timestamp="2023-06-18 23:04:11 +0200">
-				<details>≤ 0.0362167 (95% CI)</details>
+			<result outcome="success" type="quantity" value="0.0306514 ± 0.0303669 (95% CI)" timestamp="2023-06-20 22:54:51 +0200">
+				<details>0.0306514 ± 0.0303669 (95% CI)</details>
 			</result>
 		</query>
 		<query>
-			<formula>Pr [&lt;=1000; 100] ([] Initializer.init_over imply forall(i : belt_t) forall(j : belt_pos_t) 0 &lt;= belts[i][j] &lt; 2)</formula>
+			<formula>Pr [&lt;=10000] (&lt;&gt; Initializer.init_over imply (sum(x : station_t) not StationV2(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]?1:0) == sum(k : belt_t) belt_conf[k].pieces)</formula>
+			<comment/>
+			<result outcome="success" type="interval" value="≥ 0.950056 (95% CI)" timestamp="2023-06-20 22:54:54 +0200">
+				<details>≥ 0.950056 (95% CI)</details>
+				<plot title="Probability Density Distribution" xaxis="run duration in time" yaxis="probability density">
+					<series title="density" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,4.503599627370496E15
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,4.503599627370496E15
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Probability Density Confidence Intervals" xaxis="run duration in time" yaxis="probability density">
+					<series title="upper limit" type="b(0.000000)" color="0xa0a0ff" encoding="csv">0.0,1.0
+					</series>
+					<series title="lower limit" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,0.9500559162941453
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,4.503599627370496E15
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="probability" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,1.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="b(0.000000)" color="0xa0a0ff" encoding="csv">0.0,1.0
+					</series>
+					<series title="lower limit" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,0.9500559162941453
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Cumulative Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">0.0,0.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Cumulative Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="k" color="0x0000dd" encoding="csv">0.0,0.04994408370585468
+					</series>
+					<series title="lower limit" type="k" color="0xdd0000" encoding="csv">0.0,0.0
+					</series>
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">0.0,0.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Frequency Histogram" xaxis="run duration in time" yaxis="count">
+					<series title="count" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,72.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,72.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+			</result>
+		</query>
+		<query>
+			<formula>Pr [&lt;=10000] ([] Initializer.init_over imply forall(i : belt_t) forall(j : belt_pos_t) 0 &lt;= belts[i][j] &lt; 2)</formula>
 			<comment>For all paths the segments of the belt hold only one piece</comment>
-			<result outcome="success" type="interval" value="≥ 0.963783 (95% CI)" timestamp="2023-06-18 23:04:22 +0200">
-				<details>≥ 0.963783 (95% CI)</details>
+		</query>
+		<query>
+			<formula>Pr [&lt;=10000] (&lt;&gt; Initializer.init_over imply forall(i : belt_t) forall(j : belt_pos_t) 0 &lt;= belts[i][j] &lt; 2)</formula>
+			<comment/>
+			<result outcome="success" type="interval" value="≥ 0.950056 (95% CI)" timestamp="2023-06-20 22:55:10 +0200">
+				<details>≥ 0.950056 (95% CI)</details>
+				<plot title="Probability Density Distribution" xaxis="run duration in time" yaxis="probability density">
+					<series title="density" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,4.503599627370496E15
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,4.503599627370496E15
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Probability Density Confidence Intervals" xaxis="run duration in time" yaxis="probability density">
+					<series title="upper limit" type="b(0.000000)" color="0xa0a0ff" encoding="csv">0.0,1.0
+					</series>
+					<series title="lower limit" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,0.9500559162941453
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,4.503599627370496E15
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="probability" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,1.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="b(0.000000)" color="0xa0a0ff" encoding="csv">0.0,1.0
+					</series>
+					<series title="lower limit" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,0.9500559162941453
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Cumulative Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">0.0,0.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Cumulative Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="k" color="0x0000dd" encoding="csv">0.0,0.04994408370585468
+					</series>
+					<series title="lower limit" type="k" color="0xdd0000" encoding="csv">0.0,0.0
+					</series>
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">0.0,0.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Frequency Histogram" xaxis="run duration in time" yaxis="count">
+					<series title="count" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,72.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,72.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
 			</result>
 		</query>
 		<query>
-			<formula>Pr [&lt;=1000; 100] ([] Initializer.init_over imply forall(i :  belt_t) ((sum(j : belt_pos_t) belts[i][j])&lt;=Belt.max_queue(i)))</formula>
+			<formula>Pr [&lt;=10000] ([] Initializer.init_over imply forall(i :  belt_t) ((sum(j : belt_pos_t) belts[i][j])&lt;=Belt.max_queue(i)))</formula>
 			<comment>For all paths the pieces on the belts are within the queue length once the system in initialized</comment>
-			<result outcome="success" type="interval" value="≤ 0.0362167 (95% CI)" timestamp="2023-06-18 23:04:29 +0200">
-				<details>≤ 0.0362167 (95% CI)</details>
+			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-06-20 22:55:14 +0200">
+				<details>≤ 0.0499441 (95% CI)</details>
 			</result>
 		</query>
 		<query>
-			<formula>Pr [&lt;=1000; 100] ([] Flow.error)</formula>
-			<comment>For all paths the Flow component throw an error</comment>
-			<result outcome="success" type="interval" value="≤ 0.0362167 (95% CI)" timestamp="2023-06-18 23:04:34 +0200">
-				<details>≤ 0.0362167 (95% CI)</details>
+			<formula>Pr [&lt;=10000] (&lt;&gt; Initializer.init_over imply forall(i :  belt_t) ((sum(j : belt_pos_t) belts[i][j])&lt;=Belt.max_queue(i)))</formula>
+			<comment/>
+			<result outcome="success" type="interval" value="≥ 0.950056 (95% CI)" timestamp="2023-06-20 22:55:17 +0200">
+				<details>≥ 0.950056 (95% CI)</details>
+				<plot title="Probability Density Distribution" xaxis="run duration in time" yaxis="probability density">
+					<series title="density" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,4.503599627370496E15
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,4.503599627370496E15
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Probability Density Confidence Intervals" xaxis="run duration in time" yaxis="probability density">
+					<series title="upper limit" type="b(0.000000)" color="0xa0a0ff" encoding="csv">0.0,1.0
+					</series>
+					<series title="lower limit" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,0.9500559162941453
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,4.503599627370496E15
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="probability" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,1.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="b(0.000000)" color="0xa0a0ff" encoding="csv">0.0,1.0
+					</series>
+					<series title="lower limit" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,0.9500559162941453
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Cumulative Probability Distribution" xaxis="run duration in time" yaxis="probability">
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">0.0,0.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Cumulative Probability Confidence Intervals" xaxis="run duration in time" yaxis="probability">
+					<series title="upper limit" type="k" color="0x0000dd" encoding="csv">0.0,0.04994408370585468
+					</series>
+					<series title="lower limit" type="k" color="0xdd0000" encoding="csv">0.0,0.0
+					</series>
+					<series title="cumulative" type="l" color="0x000000" encoding="csv">0.0,0.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,1.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
+				<plot title="Frequency Histogram" xaxis="run duration in time" yaxis="count">
+					<series title="count" type="b(0.000000)" color="0x0000ff" encoding="csv">0.0,72.0
+					</series>
+					<series title="average" type="pl" color="0x00dd00" encoding="csv">0.0,0.0
+0.0,72.0
+					</series>
+					<comment>Parameters: α=0.05, ε=0.05, bucket width=2.2204e-16, bucket count=1
+Runs: 72 in total, 72 (100%) displayed, 0 (0%) remaining
+Span of displayed sample: [0, 0]
+Mean estimate of displayed sample: ≈ 0</comment>
+				</plot>
 			</result>
 		</query>
 		<query>
-			<formula>Pr [&lt;=1000; 100] ([] forall(i : station_t) StationV2(i).error)</formula>
-			<comment>For all paths all the stations reach the error state</comment>
-			<result outcome="success" type="interval" value="≤ 0.0362167 (95% CI)" timestamp="2023-06-18 23:04:39 +0200">
-				<details>≤ 0.0362167 (95% CI)</details>
-			</result>
-		</query>
-		<query>
-			<formula>Pr [&lt;=1000; 100] ([] Initializer.init_over imply forall(i : station_t) not StationV2(i).waiting imply belts[StationV2(i).input()][0] == 0)</formula>
+			<formula>Pr [&lt;=10000] ([] Initializer.init_over imply forall(i : station_t) not StationV2(i).waiting imply belts[StationV2(i).input()][0] == 0)</formula>
 			<comment>For all paths if station is processing no piece can reach it</comment>
-			<result outcome="failure" type="quantity" value="0.45152 ± 0.1012 (95% CI)" timestamp="2023-06-18 23:04:46 +0200">
-				<details>0.45152 ± 0.1012 (95% CI)</details>
-			</result>
-		</query>
-		<query>
-			<formula>simulate [&lt;=200] {
-sum(k : belt_t) belt_conf[k].pieces,
-sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j],
-sum(x : station_t) not StationV2(x).waiting
-}</formula>
-			<comment>In order:
-- total pieces in the system
-- pieces on belt
-- pieces being processed</comment>
-			<result outcome="success" type="quality" timestamp="2023-06-14 13:37:21 +0200">
-				<plot title="Simulations (1)" xaxis="time" yaxis="value">
-					<series title="sum (k:(const (label belt_t:(range (int) &quot;0&quot; &quot;BELTS - 1&quot;)))) belt_conf[k].pieces" type="l" color="0xff0000" encoding="csv">0.0,3.0
-200.000002,3.0
-					</series>
-					<series title="sum (i:(const (label belt_t:(range (int) &quot;0&quot; &quot;BELTS - 1&quot;)))) sum (j:(const (label belt_pos_t:(range (int) &quot;0&quot; &quot;MAX_SLOTS - 1&quot;)))) belts[i][j]" type="l" color="0x00ff00" encoding="csv">0.0,0.0
-0.0,3.0
-4.0,3.0
-4.0,2.0
-5.0,2.0
-5.0,3.0
-9.0,3.0
-9.0,2.0
-10.0,2.0
-10.0,3.0
-14.0,3.0
-14.0,2.0
-15.0,2.0
-15.0,3.0
-25.0,3.0
-25.0,2.0
-27.0,2.0
-27.0,3.0
-31.0,3.0
-31.0,2.0
-33.0,2.0
-33.0,3.0
-37.0,3.0
-37.0,2.0
-38.0,2.0
-38.0,3.0
-56.0,3.0
-56.0,2.0
-57.0,2.0
-57.0,3.0
-65.0,3.0
-65.0,2.0
-67.0,2.0
-67.0,1.0
-67.0,2.0
-69.0,2.0
-69.0,3.0
-74.0,3.0
-74.0,2.0
-76.0,2.0
-76.0,3.0
-77.0,3.0
-77.0,1.0
-78.0,1.0
-78.0,2.0
-79.0,2.0
-79.0,3.0
-86.0,3.0
-86.0,2.0
-87.0,2.0
-87.0,3.0
-89.0,3.0
-89.0,2.0
-90.0,2.0
-90.0,3.0
-95.0,3.0
-95.0,2.0
-96.0,2.0
-96.0,3.0
-104.0,3.0
-104.0,2.0
-105.0,2.0
-105.0,3.0
-109.0,3.0
-109.0,2.0
-111.0,2.0
-111.0,3.0
-116.0,3.0
-116.0,2.0
-117.0,2.0
-117.0,3.0
-125.0,3.0
-125.0,2.0
-127.0,2.0
-127.0,3.0
-131.0,3.0
-131.0,2.0
-132.0,2.0
-132.0,3.0
-156.0,3.0
-156.0,2.0
-157.0,2.0
-157.0,3.0
-158.0,3.0
-158.0,2.0
-159.0,2.0
-159.0,3.0
-165.0,3.0
-165.0,2.0
-167.0,2.0
-167.0,3.0
-169.0,3.0
-169.0,2.0
-171.0,2.0
-171.0,3.0
-173.0,3.0
-173.0,2.0
-174.0,2.0
-174.0,3.0
-177.0,3.0
-177.0,2.0
-179.0,2.0
-179.0,3.0
-184.0,3.0
-184.0,2.0
-185.0,2.0
-185.0,3.0
-188.0,3.0
-188.0,2.0
-189.0,2.0
-189.0,3.0
-196.0,3.0
-196.0,2.0
-197.0,2.0
-197.0,3.0
-200.000002,3.0
-					</series>
-					<series title="sum (x:(const (label station_t:(range (int) &quot;0&quot; &quot;STATIONS - 1&quot;)))) !StationV2[x].waiting" type="l" color="0x0000ff" encoding="csv">0.0,0.0
-4.0,0.0
-4.0,1.0
-5.0,1.0
-5.0,0.0
-9.0,0.0
-9.0,1.0
-10.0,1.0
-10.0,0.0
-14.0,0.0
-14.0,1.0
-15.0,1.0
-15.0,0.0
-25.0,0.0
-25.0,1.0
-27.0,1.0
-27.0,0.0
-31.0,0.0
-31.0,1.0
-33.0,1.0
-33.0,0.0
-37.0,0.0
-37.0,1.0
-38.0,1.0
-38.0,0.0
-56.0,0.0
-56.0,1.0
-57.0,1.0
-57.0,0.0
-65.0,0.0
-65.0,1.0
-67.0,1.0
-67.0,2.0
-67.0,1.0
-69.0,1.0
-69.0,0.0
-74.0,0.0
-74.0,1.0
-76.0,1.0
-76.0,0.0
-77.0,0.0
-77.0,2.0
-78.0,2.0
-78.0,1.0
-79.0,1.0
-79.0,0.0
-86.0,0.0
-86.0,1.0
-87.0,1.0
-87.0,0.0
-89.0,0.0
-89.0,1.0
-90.0,1.0
-90.0,0.0
-95.0,0.0
-95.0,1.0
-96.0,1.0
-96.0,0.0
-104.0,0.0
-104.0,1.0
-105.0,1.0
-105.0,0.0
-109.0,0.0
-109.0,1.0
-111.0,1.0
-111.0,0.0
-116.0,0.0
-116.0,1.0
-117.0,1.0
-117.0,0.0
-125.0,0.0
-125.0,1.0
-127.0,1.0
-127.0,0.0
-131.0,0.0
-131.0,1.0
-132.0,1.0
-132.0,0.0
-156.0,0.0
-156.0,1.0
-157.0,1.0
-157.0,0.0
-158.0,0.0
-158.0,1.0
-159.0,1.0
-159.0,0.0
-165.0,0.0
-165.0,1.0
-167.0,1.0
-167.0,0.0
-169.0,0.0
-169.0,1.0
-171.0,1.0
-171.0,0.0
-173.0,0.0
-173.0,1.0
-174.0,1.0
-174.0,0.0
-177.0,0.0
-177.0,1.0
-179.0,1.0
-179.0,0.0
-184.0,0.0
-184.0,1.0
-185.0,1.0
-185.0,0.0
-188.0,0.0
-188.0,1.0
-189.0,1.0
-189.0,0.0
-196.0,0.0
-196.0,1.0
-197.0,1.0
-197.0,0.0
-200.000002,0.0
-					</series>
-					<comment/>
-				</plot>
-			</result>
-		</query>
-		<query>
-			<formula>E [&lt;=50;10] (max: StationV2(0).x)</formula>
-			<comment/>
-			<result outcome="success" type="quantity" value="12 ± 0.953809 (95% CI)" timestamp="2023-06-18 23:02:05 +0200">
-				<details>12 ± 0.953809 (95% CI)</details>
-				<plot title="Probability Density Distribution" xaxis="max: StationV2[0].x" yaxis="probability density">
-					<series title="density" type="b(1.250000)" color="0x0000ff" encoding="csv">10.0,0.24
-11.25,0.4
-12.5,0.08
-13.75,0.0
-15.0,0.08
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">12.0,0.0
-12.0,0.4
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.25, bucket count=5
-Runs: 10 in total, 10 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [10, 15]
-Mean estimate of displayed sample: 12 ± 0.9538 (95% CI)</comment>
-				</plot>
-				<plot title="Probability Distribution" xaxis="max: StationV2[0].x" yaxis="probability">
-					<series title="probability" type="b(1.250000)" color="0x0000ff" encoding="csv">10.0,0.3
-11.25,0.5
-12.5,0.1
-13.75,0.0
-15.0,0.1
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">12.0,0.0
-12.0,0.5
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.25, bucket count=5
-Runs: 10 in total, 10 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [10, 15]
-Mean estimate of displayed sample: 12 ± 0.9538 (95% CI)</comment>
-				</plot>
-				<plot title="Cumulative Probability Distribution" xaxis="max: StationV2[0].x" yaxis="probability">
-					<series title="cumulative" type="l" color="0x000000" encoding="csv">10.0,0.0
-11.25,0.3
-12.5,0.8
-13.75,0.9
-15.0,0.9
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">12.0,0.0
-12.0,1.0
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.25, bucket count=5
-Runs: 10 in total, 10 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [10, 15]
-Mean estimate of displayed sample: 12 ± 0.9538 (95% CI)</comment>
-				</plot>
-				<plot title="Cumulative Probability Confidence Intervals" xaxis="max: StationV2[0].x" yaxis="probability">
-					<series title="upper limit" type="k" color="0x0000dd" encoding="csv">10.0,0.30849710781876083
-11.25,0.6524528500599973
-12.5,0.9747892736731666
-13.75,0.9974714214555382
-15.0,0.9974714214555382
-					</series>
-					<series title="lower limit" type="k" color="0xdd0000" encoding="csv">10.0,0.0
-11.25,0.06673951117773447
-12.5,0.44390453769235844
-13.75,0.5549838829718046
-15.0,0.5549838829718046
-					</series>
-					<series title="cumulative" type="l" color="0x000000" encoding="csv">10.0,0.0
-11.25,0.3
-12.5,0.8
-13.75,0.9
-15.0,0.9
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">12.0,0.0
-12.0,1.0
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.25, bucket count=5
-Runs: 10 in total, 10 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [10, 15]
-Mean estimate of displayed sample: 12 ± 0.9538 (95% CI)</comment>
-				</plot>
-				<plot title="Frequency Histogram" xaxis="max: StationV2[0].x" yaxis="count">
-					<series title="count" type="b(1.250000)" color="0x0000ff" encoding="csv">10.0,3.0
-11.25,5.0
-12.5,1.0
-13.75,0.0
-15.0,1.0
-					</series>
-					<series title="average" type="pl" color="0x00dd00" encoding="csv">12.0,0.0
-12.0,5.0
-					</series>
-					<comment>Parameters: α=0.05, ε=0.05, bucket width=1.25, bucket count=5
-Runs: 10 in total, 10 (100%) displayed, 0 (0%) remaining
-Span of displayed sample: [10, 15]
-Mean estimate of displayed sample: 12 ± 0.9538 (95% CI)</comment>
-				</plot>
-			</result>
-		</query>
-		<query>
-			<formula>simulate [&lt;=100] {
-	StationV2(0).x,
-	StationV2(1).x
-}</formula>
-			<comment/>
-			<result outcome="success" type="quality" timestamp="2023-06-17 22:29:14 +0200">
-				<plot title="Simulations (1)" xaxis="time" yaxis="value">
-					<series title="StationV2[0].x" type="l" color="0xff0000" encoding="csv">0.0,0.0
-4.0,4.0
-4.0,0.0
-13.0,9.0
-13.0,0.0
-22.0,9.0
-22.0,0.0
-28.0,6.0
-28.0,0.0
-36.0,8.0
-36.0,0.0
-46.0,10.0
-46.0,0.0
-57.0,11.0
-57.0,0.0
-66.0,9.0
-66.0,0.0
-74.0,8.0
-74.0,0.0
-80.0,6.0
-80.0,0.0
-89.0,9.0
-89.0,0.0
-97.0,8.0
-97.0,0.0
-100.000002,3.000002
-					</series>
-					<series title="StationV2[1].x" type="l" color="0x00ffff" encoding="csv">0.0,0.0
-4.0,4.0
-4.0,0.0
-10.0,6.0
-10.0,0.0
-20.0,10.0
-20.0,0.0
-29.0,9.0
-29.0,0.0
-38.0,9.0
-38.0,0.0
-45.0,7.0
-45.0,0.0
-55.0,10.0
-55.0,0.0
-63.0,8.0
-63.0,0.0
-70.0,7.0
-70.0,0.0
-81.0,11.0
-81.0,0.0
-89.0,8.0
-89.0,0.0
-97.0,8.0
-97.0,0.0
-100.000002,3.000002
-					</series>
-					<comment/>
-				</plot>
+			<result outcome="success" type="quantity" value="0.0306514 ± 0.0303669 (95% CI)" timestamp="2023-06-20 22:55:21 +0200">
+				<details>0.0306514 ± 0.0303669 (95% CI)</details>
 			</result>
 		</query>
 	</queries>
