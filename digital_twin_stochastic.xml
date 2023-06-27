@@ -438,7 +438,7 @@ bool detect_error() {
 }
 
 void swap() {
-    if (!detect_error()) {
+    if (!detect_error() &amp;&amp; !wait[other()]) {
         belts[belt][pos]--;
         belts[other][length()-1]++; 
     }

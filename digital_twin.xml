@@ -339,20 +339,24 @@ bool branch = false;
 // 2 --&gt; Switch every time
 // 3 --&gt; Round-robin
 
+void swap() {
+    if(!wait[other()]) {
+        belts[belt][pos]--;
+        belts[other][length()-1]++;
+    }
+}
+
 void switchBelt() {
     if (policy == 1) { return; }
     
     if (policy == 0 &amp;&amp; !gate[belt]) {
-        belts[belt][pos]--;
-        belts[other][length()-1]++;
+        swap();
     } else if (policy == 2){
-            belts[belt][pos]--;
-            belts[other][length()-1]++;
+            swap()
         }
         else {
             if (branch) {
-                belts[belt][pos]--;
-                belts[other][length()-1]++;
+                swap();
             }
             
             branch = !branch;
