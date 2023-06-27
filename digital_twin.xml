@@ -184,7 +184,7 @@ const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
 //int pieces_on_belt = 0;
 </declaration>
 	<template>
-		<name>MergerV2</name>
+		<name>Merger</name>
 		<parameter>const belt_t belt, const pos_t pos, const belt_t other</parameter>
 		<declaration>void mergeBelts() {
     belts[belt][pos+1] = belts[other][0];
@@ -206,7 +206,7 @@ const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
 		</transition>
 	</template>
 	<template>
-		<name>StationV2</name>
+		<name>Station</name>
 		<parameter>const station_t id</parameter>
 		<declaration>clock x;
 
@@ -278,7 +278,7 @@ void load() {
 		</transition>
 	</template>
 	<template>
-		<name>TailSensorV2</name>
+		<name>TailSensor</name>
 		<parameter>const tail_sensor_t id</parameter>
 		<declaration>belt_t belt() {
     return tail_sensor_conf[id].belt;
@@ -325,7 +325,7 @@ void update() {
 		</transition>
 	</template>
 	<template>
-		<name>FlowV2</name>
+		<name>Flow</name>
 		<parameter>const belt_t belt, const pos_t pos, const belt_t other, const int policy</parameter>
 		<declaration>pos_t length() {
     return belt_conf[other].length;
@@ -510,7 +510,7 @@ x = 0</label>
 		</transition>
 	</template>
 	<template>
-		<name>HeadSensorV2</name>
+		<name>HeadSensor</name>
 		<parameter>const head_sensor_t id</parameter>
 		<declaration>belt_t belt() {
     return head_sensor_conf[id].belt;
@@ -557,10 +557,10 @@ pos_t pos() {
 // 2 --&gt; Switch every time
 // 3 --&gt; Round-robin
 
-Flow = FlowV2(2, 3, 3, /*policy schedule*/3);
-Merge = MergerV2(6, 4, 5);
+FlowController = Flow(2, 3, 3, /*policy schedule*/3);
+Merge = Merger(6, 4, 5);
 
-system Initializer, Belt, StationV2, Flow, Merge, HeadSensorV2, TailSensorV2;
+system Initializer, Belt, Station, FlowController, Merge, HeadSensor, TailSensor;
 </system>
 	<queries>
 		<query>
@@ -570,10 +570,8 @@ system Initializer, Belt, StationV2, Flow, Merge, HeadSensorV2, TailSensorV2;
 			</result>
 		</query>
 		<query>
-			<formula>A[] (Initializer.init_over imply (sum(x : station_t) not StationV2(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]) == sum(k : belt_t) belt_conf[k].pieces)</formula>
+			<formula>A[] (Initializer.init_over imply (sum(x : station_t) not Station(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]) == sum(k : belt_t) belt_conf[k].pieces)</formula>
 			<comment>Always for all paths, once initilized, the pieces in the system remain the same,this also verify that two pieces never overlap or a station never holds more than one piece</comment>
-			<result outcome="success" type="quality" timestamp="2023-06-14 13:30:25 +0200">
-			</result>
 		</query>
 		<query>
 			<formula>A[] (Initializer.init_over imply forall(i : belt_t) forall(j : belt_pos_t) 0 &lt;= belts[i][j] &lt; 2)</formula>
@@ -588,262 +586,19 @@ system Initializer, Belt, StationV2, Flow, Merge, HeadSensorV2, TailSensorV2;
 			</result>
 		</query>
 		<query>
-			<formula>A[] (Initializer.init_over imply forall(i : station_t) not StationV2(i).waiting imply belts[StationV2(i).input()][0] == 0)</formula>
+			<formula>A[] (Initializer.init_over imply forall(i : station_t) not Station(i).waiting imply belts[Station(i).input()][0] == 0)</formula>
 			<comment>For all paths when a station is processing the slot before it is always free of pieces aka the station never process more than one piece at a time</comment>
-			<result outcome="success" type="quality" timestamp="2023-06-17 23:40:18 +0200">
-			</result>
 		</query>
 		<query>
 			<formula>simulate [&lt;=200] {
 sum(k : belt_t) belt_conf[k].pieces,
 sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j],
-sum(x : station_t) not StationV2(x).waiting
+sum(x : station_t) not Station(x).waiting
 }</formula>
 			<comment>In order:
 - total pieces in the system
 - pieces on belt
 - pieces being processed</comment>
-			<result outcome="success" type="quality" timestamp="2023-06-14 13:37:21 +0200">
-				<plot title="Simulations (1)" xaxis="time" yaxis="value">
-					<series title="sum (k:(const (label belt_t:(range (int) &quot;0&quot; &quot;BELTS - 1&quot;)))) belt_conf[k].pieces" type="l" color="0xff0000" encoding="csv">0.0,3.0
-200.000002,3.0
-					</series>
-					<series title="sum (i:(const (label belt_t:(range (int) &quot;0&quot; &quot;BELTS - 1&quot;)))) sum (j:(const (label belt_pos_t:(range (int) &quot;0&quot; &quot;MAX_SLOTS - 1&quot;)))) belts[i][j]" type="l" color="0x00ff00" encoding="csv">0.0,0.0
-0.0,3.0
-4.0,3.0
-4.0,2.0
-5.0,2.0
-5.0,3.0
-9.0,3.0
-9.0,2.0
-10.0,2.0
-10.0,3.0
-14.0,3.0
-14.0,2.0
-15.0,2.0
-15.0,3.0
-25.0,3.0
-25.0,2.0
-27.0,2.0
-27.0,3.0
-31.0,3.0
-31.0,2.0
-33.0,2.0
-33.0,3.0
-37.0,3.0
-37.0,2.0
-38.0,2.0
-38.0,3.0
-56.0,3.0
-56.0,2.0
-57.0,2.0
-57.0,3.0
-65.0,3.0
-65.0,2.0
-67.0,2.0
-67.0,1.0
-67.0,2.0
-69.0,2.0
-69.0,3.0
-74.0,3.0
-74.0,2.0
-76.0,2.0
-76.0,3.0
-77.0,3.0
-77.0,1.0
-78.0,1.0
-78.0,2.0
-79.0,2.0
-79.0,3.0
-86.0,3.0
-86.0,2.0
-87.0,2.0
-87.0,3.0
-89.0,3.0
-89.0,2.0
-90.0,2.0
-90.0,3.0
-95.0,3.0
-95.0,2.0
-96.0,2.0
-96.0,3.0
-104.0,3.0
-104.0,2.0
-105.0,2.0
-105.0,3.0
-109.0,3.0
-109.0,2.0
-111.0,2.0
-111.0,3.0
-116.0,3.0
-116.0,2.0
-117.0,2.0
-117.0,3.0
-125.0,3.0
-125.0,2.0
-127.0,2.0
-127.0,3.0
-131.0,3.0
-131.0,2.0
-132.0,2.0
-132.0,3.0
-156.0,3.0
-156.0,2.0
-157.0,2.0
-157.0,3.0
-158.0,3.0
-158.0,2.0
-159.0,2.0
-159.0,3.0
-165.0,3.0
-165.0,2.0
-167.0,2.0
-167.0,3.0
-169.0,3.0
-169.0,2.0
-171.0,2.0
-171.0,3.0
-173.0,3.0
-173.0,2.0
-174.0,2.0
-174.0,3.0
-177.0,3.0
-177.0,2.0
-179.0,2.0
-179.0,3.0
-184.0,3.0
-184.0,2.0
-185.0,2.0
-185.0,3.0
-188.0,3.0
-188.0,2.0
-189.0,2.0
-189.0,3.0
-196.0,3.0
-196.0,2.0
-197.0,2.0
-197.0,3.0
-200.000002,3.0
-					</series>
-					<series title="sum (x:(const (label station_t:(range (int) &quot;0&quot; &quot;STATIONS - 1&quot;)))) !StationV2[x].waiting" type="l" color="0x0000ff" encoding="csv">0.0,0.0
-4.0,0.0
-4.0,1.0
-5.0,1.0
-5.0,0.0
-9.0,0.0
-9.0,1.0
-10.0,1.0
-10.0,0.0
-14.0,0.0
-14.0,1.0
-15.0,1.0
-15.0,0.0
-25.0,0.0
-25.0,1.0
-27.0,1.0
-27.0,0.0
-31.0,0.0
-31.0,1.0
-33.0,1.0
-33.0,0.0
-37.0,0.0
-37.0,1.0
-38.0,1.0
-38.0,0.0
-56.0,0.0
-56.0,1.0
-57.0,1.0
-57.0,0.0
-65.0,0.0
-65.0,1.0
-67.0,1.0
-67.0,2.0
-67.0,1.0
-69.0,1.0
-69.0,0.0
-74.0,0.0
-74.0,1.0
-76.0,1.0
-76.0,0.0
-77.0,0.0
-77.0,2.0
-78.0,2.0
-78.0,1.0
-79.0,1.0
-79.0,0.0
-86.0,0.0
-86.0,1.0
-87.0,1.0
-87.0,0.0
-89.0,0.0
-89.0,1.0
-90.0,1.0
-90.0,0.0
-95.0,0.0
-95.0,1.0
-96.0,1.0
-96.0,0.0
-104.0,0.0
-104.0,1.0
-105.0,1.0
-105.0,0.0
-109.0,0.0
-109.0,1.0
-111.0,1.0
-111.0,0.0
-116.0,0.0
-116.0,1.0
-117.0,1.0
-117.0,0.0
-125.0,0.0
-125.0,1.0
-127.0,1.0
-127.0,0.0
-131.0,0.0
-131.0,1.0
-132.0,1.0
-132.0,0.0
-156.0,0.0
-156.0,1.0
-157.0,1.0
-157.0,0.0
-158.0,0.0
-158.0,1.0
-159.0,1.0
-159.0,0.0
-165.0,0.0
-165.0,1.0
-167.0,1.0
-167.0,0.0
-169.0,0.0
-169.0,1.0
-171.0,1.0
-171.0,0.0
-173.0,0.0
-173.0,1.0
-174.0,1.0
-174.0,0.0
-177.0,0.0
-177.0,1.0
-179.0,1.0
-179.0,0.0
-184.0,0.0
-184.0,1.0
-185.0,1.0
-185.0,0.0
-188.0,0.0
-188.0,1.0
-189.0,1.0
-189.0,0.0
-196.0,0.0
-196.0,1.0
-197.0,1.0
-197.0,0.0
-200.000002,0.0
-					</series>
-					<comment/>
-				</plot>
-			</result>
 		</query>
 	</queries>
 </nta>
