@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os
 import multiprocessing as mp
 import tempfile
@@ -12,13 +14,13 @@ from tqdm import tqdm
 # PARAMETERS
 N_WORKERS = 0
 VERIFYTA_BINARY = "/Applications/UPPAAL-5.0.0-rc2.app/Contents/Resources/uppaal/bin/verifyta"
-CACHE = True
+CACHE = False
 
-TAU = 10
+TAU = 50
 QUERY = 'Pr [<=TAU] ([] Initializer.init_over imply not ((exists(i : station_t) Station(i).waiting and Belt.check_deadlock(Station(i).input())) or exists(j: station_t) Station(j).error or FlowController.error))'
 VARIABLE_PARAMETERS = {
-	'PROCESSING_TIME_MEAN': range(1, 6),
-	'PROCESSING_TIME_VARIANCE': range(1, 6),
+	'PROCESSING_TIME_MEAN': range(1, 11),
+	'PROCESSING_TIME_VARIANCE': range(1, 11),
 	'SENSOR_ERROR': range(1, 11)
 }
 
@@ -48,16 +50,15 @@ def start_simulation():
 def generate_results_plot(xvalues, yvalues, zvalues, colorvalues):
 	fig = plt.figure()
 	ax = fig.add_subplot(111, projection='3d', proj_type='ortho')
-	ax.view_init(10, 100)
 
-	ax.scatter(xvalues, yvalues, zvalues, c=colorvalues, cmap='RdYlGn', linewidth=0.5)
-
+	ax.view_init(azim=98, elev=10)
+	ax.scatter(xvalues, yvalues, zvalues, c=colorvalues, cmap='RdYlGn', linewidth=0.5, depthshade=False)
 	ax.set_xlabel(PLOT_LABELS[0])
 	ax.set_ylabel(PLOT_LABELS[1])
 	ax.set_zlabel(PLOT_LABELS[2])
 
 	# TODO - Add legend
-
+	# plt.show()
 	plt.savefig(PLOT_OUTPUT_FILE)
 
 def run_simulation():
