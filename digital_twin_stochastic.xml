@@ -65,7 +65,8 @@ const int POLICY_SCHEDULE = 0;
 
 const int CONFIG = 1;
 
-const int BELT_SPEED[CONFIGS] = {1, 6, 1, 6};
+const int BELT_SPEEDS[CONFIGS] = {1, 6, 1, 6};
+const int BELT_SPEED = BELT_SPEEDS[CONFIG];
 
 // head position, tail position, length, pieces to be loaded
 const belt_config_t belt_conf[CONFIGS][BELTS] = {{
@@ -578,7 +579,7 @@ void add_last() {
 			<name x="484" y="-93">start</name>
 		</location>
 		<location id="id24" x="280" y="-59">
-			<label kind="invariant" x="297" y="-42">x &lt;=BELT_SPEED[CONFIG]</label>
+			<label kind="invariant" x="331" y="-42">x &lt;=BELT_SPEED</label>
 		</location>
 		<location id="id25" x="51" y="-59">
 			<committed/>
@@ -596,7 +597,7 @@ x = 0</label>
 		<transition id="id27">
 			<source ref="id24"/>
 			<target ref="id25"/>
-			<label kind="guard" x="85" y="-51">x&gt;=BELT_SPEED[CONFIG]</label>
+			<label kind="guard" x="119" y="-51">x&gt;=BELT_SPEED</label>
 			<label kind="synchronisation" x="110" y="-34">tick_components!</label>
 		</transition>
 		<transition id="id28">

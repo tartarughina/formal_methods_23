@@ -8,6 +8,7 @@ const int TAIL_SENSORS = 5;
 const int BELTS = 7;
 const int STATIONS = 6;
 const int MAX_SLOTS = 29;
+const int CONFIGS = 3;
 
 typedef int[0, MAX_SLOTS-1] belt_pos_t;
 typedef int[0, HEAD_SENSORS-1] head_sensor_t;
@@ -38,13 +39,24 @@ int[0,2] belts[BELTS][MAX_SLOTS];
 bool gate[BELTS];
 bool wait[BELTS];
 
+// POLICY SCHEDULE
+// 0 --&gt; Go to the free station
+// 1 --&gt; Keep flowing, do nothing
+// 2 --&gt; Switch every time
+// 3 --&gt; Round-robin
+
+const int POLICY_SCHEDULE = 0;
+
 // CONFIGURATIONS 
 
-// FIRST CONFIGURATION
-const int BELT_SPEED = 1;
+const int CONFIG = 1;
+
+const int BELT_SPEEDS[CONFIGS] = {1, 6, 3};
+const int BELT_SPEED = BELT_SPEEDS[CONFIG];
 
 // head position, tail position, length, pieces to be loaded
-const belt_config_t belt_conf[BELTS] = {
+const belt_config_t belt_conf[CONFIGS][BELTS] = { 
+{
     {3, 14, 17, 3}, 
     {3, 13, 20, 0},
     {2, -1, 29, 0},
@@ -52,124 +64,103 @@ const belt_config_t belt_conf[BELTS] = {
     {3, 6, 8, 0},
     {-1, -1, 5, 0},
     {1, 3, 10, 0}
-};
+},
+{
+    {3, 14, 17, 5}, 
+    {3, 13, 20, 0},
+    {2, -1, 29, 0},
+    {4, 13, 15, 0},
+    {3, 6, 8, 0},
+    {-1, -1, 5, 0},
+    {1, 3, 10, 0}
+},
+{
+    {3, 14, 17, 5}, 
+    {3, 13, 20, 0},
+    {2, -1, 29, 0},
+    {4, 13, 15, 0},
+    {3, 6, 8, 0},
+    {-1, -1, 5, 0},
+    {1, 3, 10, 0}
+}};
 
 // processing time, input belt, output belt
-const station_config_t station_conf[STATIONS] = {
+const station_config_t station_conf[CONFIGS][STATIONS] = {
+{
     {6, 0, 1},
     {6, 1, 2},
     {3, 2, 4},
     {3, 4, 5},
     {6, 3, 6},
     {6, 6, 0}
-};
-
-// belt, position on the belt
-const sensor_config_t head_sensor_conf[HEAD_SENSORS] = {
-  {0, 3},
-  {1, 3},
-  {2, 2},
-  {4, 3},
-  {3, 3},
-  {6, 1}
-};
-
-// belt, position on the belt
-const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
-    {0, 14},
-    {1, 13},
-    {3, 12},
-    {4, 6},
-    {6, 3}
-};
-
-/*
-// SECOND CONFIGURATION
-const int BELT_SPEED = 6;
-
-// head position, tail position, length, pieces to be loaded
-const belt_config_t belt_conf[BELTS] = {
-    {3, 14, 17, 5}, 
-    {3, 13, 20, 0},
-    {2, -1, 29, 0},
-    {4, 13, 15, 0},
-    {3, 6, 8, 0},
-    {-1, -1, 5, 0},
-    {1, 3, 10, 0}
-};
-
-// processing time, input belt, output belt
-const station_config_t station_conf[STATIONS] = {
+},
+{
     {2, 0, 1},
     {2, 1, 2},
     {1, 2, 4},
     {1, 4, 5},
     {2, 3, 6},
     {2, 6, 0}
-};
-
-// belt, position on the belt
-const sensor_config_t head_sensor_conf[HEAD_SENSORS] = {
-  {0, 3},
-  {1, 3},
-  {2, 2},
-  {4, 3},
-  {3, 3},
-  {6, 1}
-};
-
-// belt, position on the belt
-const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
-    {0, 14},
-    {1, 13},
-    {3, 12},
-    {4, 6},
-    {6, 3}
-};
-
-// THIRD CONFIGURATION
-const int BELT_SPEED = 3;
-
-// head position, tail position, length, pieces to be loaded
-const belt_config_t belt_conf[BELTS] = {
-    {3, 14, 17, 5}, 
-    {3, 13, 20, 0},
-    {2, -1, 29, 0},
-    {4, 13, 15, 0},
-    {3, 6, 8, 0},
-    {-1, -1, 5, 0},
-    {1, 3, 10, 0}
-};
-
-// processing time, input belt, output belt
-const station_config_t station_conf[STATIONS] = {
+}, 
+{
     {3, 0, 1},
     {5, 1, 2},
     {4, 2, 4},
     {4, 4, 5},
     {8, 3, 6},
     {6, 6, 0}
-};
+}};
 
 // belt, position on the belt
-const sensor_config_t head_sensor_conf[HEAD_SENSORS] = {
+const sensor_config_t head_sensor_conf[CONFIGS][HEAD_SENSORS] = {
+{
   {0, 3},
   {1, 3},
   {2, 2},
   {4, 3},
   {3, 3},
   {6, 1}
-};
+},
+{
+  {0, 3},
+  {1, 3},
+  {2, 2},
+  {4, 3},
+  {3, 3},
+  {6, 1}
+},
+{
+  {0, 3},
+  {1, 3},
+  {2, 2},
+  {4, 3},
+  {3, 3},
+  {6, 1}
+}};
 
 // belt, position on the belt
-const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
+const sensor_config_t tail_sensor_conf[CONFIGS][TAIL_SENSORS] = {
+{
     {0, 14},
     {1, 13},
     {3, 12},
     {4, 6},
     {6, 3}
-};
-*/
+},
+{
+    {0, 14},
+    {1, 13},
+    {3, 12},
+    {4, 6},
+    {6, 3}
+}, 
+{
+    {0, 14},
+    {1, 13},
+    {3, 12},
+    {4, 6},
+    {6, 3}
+}};
 
 // TOTAL PIECES
 // sum(k : belt_t) belt_conf[k].pieces
@@ -211,19 +202,19 @@ const sensor_config_t tail_sensor_conf[TAIL_SENSORS] = {
 		<declaration>clock x;
 
 int processing_time() {
-    return station_conf[id].processing_time;
+    return station_conf[CONFIG][id].processing_time;
 }
 
 belt_t input() {
-    return station_conf[id].input;
+    return station_conf[CONFIG][id].input;
 }
 
 belt_t output() {
-    return station_conf[id].output;
+    return station_conf[CONFIG][id].output;
 }
 
 pos_t length() {
-    return belt_conf[output()].length;
+    return belt_conf[CONFIG][output()].length;
 }
 
 void offload() {
@@ -281,11 +272,11 @@ void load() {
 		<name>TailSensor</name>
 		<parameter>const tail_sensor_t id</parameter>
 		<declaration>belt_t belt() {
-    return tail_sensor_conf[id].belt;
+    return tail_sensor_conf[CONFIG][id].belt;
 }
 
 pos_t pos() {
-    return tail_sensor_conf[id].pos;
+    return tail_sensor_conf[CONFIG][id].pos;
 }
 
 void update() {
@@ -328,7 +319,7 @@ void update() {
 		<name>Flow</name>
 		<parameter>const belt_t belt, const pos_t pos, const belt_t other, const int policy</parameter>
 		<declaration>pos_t length() {
-    return belt_conf[other].length;
+    return belt_conf[CONFIG][other].length;
 }
 
 bool branch = false;
@@ -382,15 +373,15 @@ void switchBelt() {
 		<declaration>clock x;
 
 pos_t head(belt_t id) {
-    return belt_conf[id].head;
+    return belt_conf[CONFIG][id].head;
 }
 
 pos_t length(belt_t id) {
-    return belt_conf[id].length;
+    return belt_conf[CONFIG][id].length;
 }
 
 pos_t tail(belt_t id) {
-    return belt_conf[id].tail;
+    return belt_conf[CONFIG][id].tail;
 }
 
 int max_queue(belt_t id) {
@@ -451,7 +442,7 @@ void move_belt() {
 			<name x="484" y="-93">start</name>
 		</location>
 		<location id="id19" x="280" y="-59">
-			<label kind="invariant" x="270" y="-42">x &lt;=BELT_SPEED</label>
+			<label kind="invariant" x="331" y="-42">x &lt;=BELT_SPEED</label>
 		</location>
 		<location id="id20" x="51" y="-59">
 			<committed/>
@@ -484,13 +475,13 @@ x = 0</label>
     int i, j;
     
     for (i = 0; i &lt; BELTS; i++) {
-        if (belt_conf[i].head == -1) {
-            for (j = 0; j &lt; belt_conf[i].pieces; j++) {
+        if (belt_conf[CONFIG][i].head == -1) {
+            for (j = 0; j &lt; belt_conf[CONFIG][i].pieces; j++) {
                 belts[i][i] = 1;
             }
         }
         else {
-            for (j = belt_conf[i].head; j &lt; belt_conf[i].pieces + belt_conf[i].head; j++) {
+            for (j = belt_conf[CONFIG][i].head; j &lt; belt_conf[CONFIG][i].pieces + belt_conf[CONFIG][i].head; j++) {
                 belts[i][j] = 1;
             }
         }
@@ -517,11 +508,11 @@ x = 0</label>
 		<name>HeadSensor</name>
 		<parameter>const head_sensor_t id</parameter>
 		<declaration>belt_t belt() {
-    return head_sensor_conf[id].belt;
+    return head_sensor_conf[CONFIG][id].belt;
 }
 
 pos_t pos() {
-    return head_sensor_conf[id].pos;
+    return head_sensor_conf[CONFIG][id].pos;
 }
 </declaration>
 		<location id="id27" x="161" y="-59">
