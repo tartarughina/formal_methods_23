@@ -16,19 +16,19 @@ N_WORKERS = 0
 VERIFYTA_BINARY = "/Applications/UPPAAL-5.0.0-rc2.app/Contents/Resources/uppaal/bin/verifyta"
 CACHE = False
 
-TAU = 50
+# TAU = 50
 QUERY = 'Pr [<=TAU] ([] Initializer.init_over imply not ((exists(i : station_t) Station(i).waiting and Belt.check_deadlock(Station(i).input())) or exists(j: station_t) Station(j).error or FlowController.error))'
 VARIABLE_PARAMETERS = {
-	'PROCESSING_TIME_MEAN': range(1, 11),
-	'PROCESSING_TIME_VARIANCE': range(1, 11),
-	'SENSOR_ERROR': range(1, 11)
+	'PROCESSING_TIME_MEAN': range(1, 5),
+	'PROCESSING_TIME_VARIANCE': range(1, 5),
+	'TAU': range(1, 11)
 }
 
 # PLOT CONFIGURATION
 PLOT_OUTPUT_FILE = 'out/plot.png'
 CACHE_OUTPUT_FILE = 'out/cache.pkl'
-PLOT_LABELS = ['PROCESSING_TIME_MEAN', 'PROCESSING_TIME_VARIANCE', 'SENSOR_ERROR']
-PLOT_KEYS = ['PROCESSING_TIME_MEAN', 'PROCESSING_TIME_VARIANCE', 'SENSOR_ERROR']
+PLOT_LABELS = ['PROCESSING_TIME_MEAN', 'PROCESSING_TIME_VARIANCE', 'TAU']
+PLOT_KEYS = ['PROCESSING_TIME_MEAN', 'PROCESSING_TIME_VARIANCE', 'TAU']
 
 def start_simulation():
 
@@ -142,11 +142,11 @@ def run_simulation_configuration(params):
 	return params, probabilities
 
 def generate_template(params):
-	with open('digital_twin_stochastic.xml', 'r') as template_file:
+	with open('digital_twin_stochastic copy.xml', 'r') as template_file:
 		template = template_file.read()
 	
 	var_params = params.copy()
-	var_params.update({"TAU": TAU})
+	# var_params.update({"TAU": TAU})
 	
 	jinja_template = Template(template)
 	template = jinja_template.render(var_params)

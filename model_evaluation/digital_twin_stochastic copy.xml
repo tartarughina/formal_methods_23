@@ -11,7 +11,7 @@ const int MAX_SLOTS = 29;
 const int TAU = {{TAU}};
 const int PROCESSING_TIME_MEAN = {{PROCESSING_TIME_MEAN}};
 const int PROCESSING_TIME_VARIANCE = {{PROCESSING_TIME_VARIANCE}};
-const int SENSOR_ERROR = {{SENSOR_ERROR}};
+const int SENSOR_ERROR = 5;
 
 typedef int[0, MAX_SLOTS-1] belt_pos_t;
 typedef int[0, HEAD_SENSORS-1] head_sensor_t;
@@ -19,7 +19,7 @@ typedef int[0, TAIL_SENSORS-1] tail_sensor_t;
 typedef int[0, BELTS-1] belt_t;
 typedef int[0, STATIONS-1] station_t;
 typedef int[-1, MAX_SLOTS] pos_t;
-typedef int[0, 1000] error_t;
+typedef int[0, 100] error_t;
 
 typedef struct { 
     pos_t head, tail, length;
@@ -401,7 +401,7 @@ void malfunction() {
 		<transition id="id17">
 			<source ref="id14"/>
 			<target ref="id13"/>
-			<label kind="probability" x="178" y="161">1000 - error()</label>
+			<label kind="probability" x="178" y="161">100 - error()</label>
 		</transition>
 		<transition id="id18">
 			<source ref="id14"/>
@@ -731,7 +731,7 @@ error_t error() {
 		<transition id="id43">
 			<source ref="id37"/>
 			<target ref="id35"/>
-			<label kind="probability" x="136" y="-110">1000 - error()</label>
+			<label kind="probability" x="136" y="-110">100 - error()</label>
 		</transition>
 		<transition id="id44" controllable="false">
 			<source ref="id33"/>
