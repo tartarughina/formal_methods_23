@@ -563,8 +563,10 @@ system Initializer, Belt, Station, FlowController, Merge, HeadSensor, TailSensor
 			<comment>Always for all paths the model doesn't incur into deadlock state</comment>
 		</query>
 		<query>
-			<formula>A[] (Initializer.init_over imply (sum(x : station_t) not Station(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]) == sum(k : belt_t) belt_conf[k].pieces)</formula>
+			<formula>A[] (Initializer.init_over imply (sum(x : station_t) not Station(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]) == sum(k : belt_t) belt_conf[CONFIG][k].pieces)</formula>
 			<comment>Always for all paths, once initilized, the pieces in the system remain the same,this also verify that two pieces never overlap or a station never holds more than one piece</comment>
+			<result outcome="success" type="quality" timestamp="2023-07-10 18:12:14 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>A[] (Initializer.init_over imply forall(i : belt_t) forall(j : belt_pos_t) 0 &lt;= belts[i][j] &lt; 2)</formula>
@@ -575,12 +577,15 @@ system Initializer, Belt, Station, FlowController, Merge, HeadSensor, TailSensor
 		<query>
 			<formula>A[] (Initializer.init_over imply forall(i :  belt_t) ((sum(j : belt_pos_t) belts[i][j])&lt;=Belt.max_queue(i)))</formula>
 			<comment>Always for all paths the pieces on the belts are within the queue length once the system in initialized</comment>
-			<result outcome="success" type="quality" timestamp="2023-06-14 12:01:03 +0200">
+			<result outcome="success" type="quality" timestamp="2023-07-10 18:20:48 +0200">
 			</result>
 		</query>
 		<query>
-			<formula>A[] (Initializer.init_over imply forall(i : station_t) not Station(i).waiting imply belts[Station(i).input()][0] == 0)</formula>
+			<formula>A[] (Initializer.init_over imply forall(i : station_t) not Station(i).waiting imply (sum(j: belt_pos_t) (j &lt; HeadSensor(i).pos())?belts[Station(i).input()][j]:0) == 0)
+</formula>
 			<comment>For all paths when a station is processing the slot before it is always free of pieces aka the station never process more than one piece at a time</comment>
+			<result outcome="success" type="quality" timestamp="2023-07-10 18:20:45 +0200">
+			</result>
 		</query>
 		<query>
 			<formula>simulate [&lt;=200] {
