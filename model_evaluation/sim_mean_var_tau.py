@@ -19,8 +19,8 @@ CACHE = False
 # TAU = 50
 QUERY = 'Pr [<=TAU] ([] Initializer.init_over imply not ((exists(i : station_t) Station(i).waiting and Belt.check_deadlock(Station(i).input())) or exists(j: station_t) Station(j).error or FlowController.error))'
 VARIABLE_PARAMETERS = {
-	'PROCESSING_TIME_MEAN': range(1, 5),
-	'PROCESSING_TIME_VARIANCE': range(1, 5),
+	'PROCESSING_TIME_MEAN': range(1, 6),
+	'PROCESSING_TIME_VARIANCE': range(1, 6),
 	'TAU': range(1, 11)
 }
 
@@ -57,8 +57,13 @@ def generate_results_plot(xvalues, yvalues, zvalues, colorvalues):
 	ax.set_ylabel(PLOT_LABELS[1])
 	ax.set_zlabel(PLOT_LABELS[2])
 
-	# TODO - Add legend
-	# plt.show()
+	# Add colorbar with coherent range on colorvalues
+	scalarMap = plt.cm.ScalarMappable(cmap='RdYlGn')
+	scalarMap.set_array(colorvalues)
+	fig.colorbar(scalarMap, shrink=0.5, aspect=10)
+
+	print("[DEBUG] Color values: ", min(colorvalues), max(colorvalues))
+
 	plt.savefig(PLOT_OUTPUT_FILE)
 
 def run_simulation():
@@ -79,6 +84,7 @@ def run_simulation():
 		yvalues.append(params[ykey])
 		zvalues.append(params[zkey])
 		colorvalues.append(probs[0] + probs[1] / 2)
+		print(f'[DEBUG] Color value: {probs[0]} + {probs[1]} / 2 = {probs[0] + probs[1] / 2}')
 	
 	return xvalues, yvalues, zvalues, colorvalues
 
@@ -142,7 +148,7 @@ def run_simulation_configuration(params):
 	return params, probabilities
 
 def generate_template(params):
-	with open('digital_twin_stochastic copy.xml', 'r') as template_file:
+	with open('digital_twin_stochastic_tau.xml', 'r') as template_file:
 		template = template_file.read()
 	
 	var_params = params.copy()

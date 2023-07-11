@@ -14,21 +14,21 @@ from tqdm import tqdm
 # PARAMETERS
 N_WORKERS = 0
 VERIFYTA_BINARY = "/Applications/UPPAAL-5.0.0-rc2.app/Contents/Resources/uppaal/bin/verifyta"
-CACHE = True
+CACHE = False
 
-TAU = 10
+TAU = 50
 QUERY = 'Pr [<=TAU] ([] Initializer.init_over imply not ((exists(i : station_t) Station(i).waiting and Belt.check_deadlock(Station(i).input())) or exists(j: station_t) Station(j).error or FlowController.error))'
 VARIABLE_PARAMETERS = {
-	'PROCESSING_TIME_MEAN': range(1, 6),
-	'PROCESSING_TIME_VARIANCE': range(1, 6),
+	'CONFIG': range(0, 4),
+	'BELT_SPEED': range(1, 6),
 	'SENSOR_ERROR': range(1, 30, 5)
 }
 
 # PLOT CONFIGURATION
 PLOT_OUTPUT_FILE = 'out/plot.png'
 CACHE_OUTPUT_FILE = 'out/cache.pkl'
-PLOT_LABELS = ['PROCESSING_TIME_MEAN', 'PROCESSING_TIME_VARIANCE', 'SENSOR_ERROR']
-PLOT_KEYS = ['PROCESSING_TIME_MEAN', 'PROCESSING_TIME_VARIANCE', 'SENSOR_ERROR']
+PLOT_LABELS = ['PROCESSING_TIME_MEAN', 'BELT_SPEED', 'SENSOR_ERROR']
+PLOT_KEYS = ['PROCESSING_TIME_MEAN', 'BELT_SPEED', 'SENSOR_ERROR']
 
 def start_simulation():
 
@@ -148,7 +148,7 @@ def run_simulation_configuration(params):
 	return params, probabilities
 
 def generate_template(params):
-	with open('digital_twin_stochastic_err.xml', 'r') as template_file:
+	with open('digital_twin_stochastic_err_belt.xml', 'r') as template_file:
 		template = template_file.read()
 	
 	var_params = params.copy()

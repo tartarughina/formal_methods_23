@@ -57,7 +57,7 @@ const int BELT_SPEED = BELT_SPEEDS[CONFIG];
 // head position, tail position, length, pieces to be loaded
 const belt_config_t belt_conf[CONFIGS][BELTS] = { 
 {
-    {3, 14, 17, 3}, 
+    {3, 14, 17, 12}, 
     {3, 13, 20, 0},
     {2, -1, 29, 0},
     {4, 13, 15, 0},
@@ -66,7 +66,7 @@ const belt_config_t belt_conf[CONFIGS][BELTS] = {
     {1, 3, 10, 0}
 },
 {
-    {3, 14, 17, 5}, 
+    {3, 14, 17, 12}, 
     {3, 13, 20, 0},
     {2, -1, 29, 0},
     {4, 13, 15, 0},
@@ -561,8 +561,6 @@ system Initializer, Belt, Station, FlowController, Merge, HeadSensor, TailSensor
 		<query>
 			<formula>A[] not deadlock</formula>
 			<comment>Always for all paths the model doesn't incur into deadlock state</comment>
-			<result outcome="success" type="quality" timestamp="2023-06-18 22:13:15 +0200">
-			</result>
 		</query>
 		<query>
 			<formula>A[] (Initializer.init_over imply (sum(x : station_t) not Station(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]) == sum(k : belt_t) belt_conf[k].pieces)</formula>
