@@ -1,0 +1,895 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
+<nta>
+	<declaration>// Place global declarations here.
+
+const int HEAD_SENSORS = 6;
+const int TAIL_SENSORS = 5;
+const int BELTS = 7;
+const int STATIONS = 6;
+const int MAX_SLOTS = 29;
+const int CONFIGS = 4;
+
+typedef int[0, MAX_SLOTS-1] belt_pos_t;
+typedef int[0, HEAD_SENSORS-1] head_sensor_t;
+typedef int[0, TAIL_SENSORS-1] tail_sensor_t;
+typedef int[0, BELTS-1] belt_t;
+typedef int[0, STATIONS-1] station_t;
+typedef int[-1, MAX_SLOTS] pos_t;
+typedef int[0, 100] error_t;
+
+typedef struct { 
+    pos_t head, tail, length;
+    int pieces;
+} belt_config_t;
+
+typedef struct {
+    int mean, variance;
+    belt_t input, output;
+} station_config_t;
+
+typedef struct {
+    belt_t belt;
+    pos_t pos;
+    error_t error;
+} sensor_config_t;
+
+broadcast chan move, tick, tick_components, init_done;
+broadcast chan free[STATIONS];
+ 
+int[0,2] belts[BELTS][MAX_SLOTS];
+bool gate[BELTS]; // true --&gt; let flow | false --&gt; block pieces
+bool wait[BELTS];
+
+// POLICY SCHEDULE
+// 0 --&gt; Go to the free station
+// 1 --&gt; Keep flowing, do nothing
+// 2 --&gt; Switch every time
+// 3 --&gt; Round-robin
+
+const int POLICY_SCHEDULE = 0;
+
+// CONFIGURATIONS
+
+// FIRST CONFIGURATION
+// fast belt, slow stations, low error weight
+
+// SECOND CONFIGURATION
+// slow belt, fast station, low error weight
+
+// THIRD CONFIGURATION
+// fast belt, slow station, high error weight
+
+// FOURTH CONFIGURATION
+// slow belt, quick station, high error weight
+
+const int CONFIG = 1;
+
+const int BELT_SPEEDS[CONFIGS] = {1, 6, 1, 6};
+const int BELT_SPEED = BELT_SPEEDS[CONFIG];
+
+// head position, tail position, length, pieces to be loaded
+const belt_config_t belt_conf[CONFIGS][BELTS] = {{
+    {3, 14, 17, 12}, 
+    {3, 13, 20, 0},
+    {2, -1, 29, 0},
+    {4, 13, 16, 0},
+    {3, 6, 8, 0},
+    {-1, -1, 5, 0},
+    {1, 3, 10, 0}
+},
+{
+    {3, 14, 17, 12}, 
+    {3, 13, 20, 0},
+    {2, -1, 29, 0},
+    {4, 13, 16, 0},
+    {3, 6, 8, 0},
+    {-1, -1, 5, 0},
+    {1, 3, 10, 0}
+},
+{
+    {3, 14, 17, 12}, 
+    {3, 13, 20, 10},
+    {2, -1, 29, 0},
+    {4, 13, 16, 0},
+    {3, 6, 8, 0},
+    {-1, -1, 5, 0},
+    {1, 3, 10, 0}
+},
+{
+    {3, 14, 17, 12}, 
+    {3, 13, 20, 10},
+    {2, -1, 29, 0},
+    {4, 13, 16, 0},
+    {3, 6, 8, 0},
+    {-1, -1, 5, 0},
+    {1, 3, 10, 0}
+}};
+
+// mean processing time, variance processing time, input belt, output belt
+const station_config_t station_conf[CONFIGS][STATIONS] = {
+{
+    {6, 2, 0, 1},
+    {6, 1, 1, 2},
+    {4, 1, 2, 4},
+    {4, 1, 4, 5},
+    {7, 2, 3, 6},
+    {7, 2, 6, 0}
+},
+{
+    {6, 2, 0, 1},
+    {6, 1, 1, 2},
+    {4, 1, 2, 4},
+    {4, 1, 4, 5},
+    {7, 2, 3, 6},
+    {7, 2, 6, 0}
+},
+{
+    {6, 2, 0, 1},
+    {6, 1, 1, 2},
+    {4, 1, 2, 4},
+    {4, 1, 4, 5},
+    {7, 2, 3, 6},
+    {7, 2, 6, 0}
+},
+{
+    {3, 1, 0, 1},
+    {3, 1, 1, 2},
+    {2, 1, 2, 4},
+    {2, 1, 4, 5},
+    {4, 2, 3, 6},
+    {3, 1, 6, 0}
+}};
+
+// belt, position on the belt, error weight
+const sensor_config_t head_sensor_conf[CONFIGS][HEAD_SENSORS] = {
+{
+  {0, 3, 2},
+  {1, 3, 2},
+  {2, 2, 2},
+  {4, 3, 2},
+  {3, 4, 2},
+  {6, 1, 2}
+},
+{
+  {0, 3, 10},
+  {1, 3, 10},
+  {2, 2, 10},
+  {4, 3, 10},
+  {3, 4, 10},
+  {6, 1, 10}
+},
+{
+  {0, 3, 10},
+  {1, 3, 10},
+  {2, 2, 10},
+  {4, 3, 10},
+  {3, 4, 10},
+  {6, 1, 10}
+},
+{
+  {0, 3, 10},
+  {1, 3, 10},
+  {2, 2, 10},
+  {4, 3, 10},
+  {3, 4, 10},
+  {6, 1, 10}  
+}};
+
+// belt, position on the belt, error weight
+const sensor_config_t tail_sensor_conf[CONFIGS][TAIL_SENSORS] = {
+{
+    {0, 14, 2},
+    {1, 13, 2},
+    {3, 13, 2},
+    {4, 6, 2},
+    {6, 3, 2}
+},
+{
+    {0, 14, 10},
+    {1, 13, 10},
+    {3, 13, 10},
+    {4, 6, 10},
+    {6, 3, 10}
+},
+{
+    {0, 14, 10},
+    {1, 13, 10},
+    {3, 13, 10},
+    {4, 6, 10},
+    {6, 3, 10}
+},
+{
+    {0, 14, 10},
+    {1, 13, 10},
+    {3, 13, 10},
+    {4, 6, 10},
+    {6, 3, 10}
+}};
+
+// TOTAL PIECES
+// sum(k : belt_t) belt_conf[k].pieces
+// int total_pieces = 0;
+
+// PIECES BEING PROCESSED
+// sum(x : station_t) not StationV2(x).waiting
+//int processing_pieces = 0;
+
+// PIECES ON BELT
+// sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]
+//int pieces_on_belt = 0;</declaration>
+	<template>
+		<name>Merger</name>
+		<parameter>const belt_t belt, const pos_t pos, const belt_t other</parameter>
+		<declaration>void mergeBelts() {
+    belts[belt][pos+1] = belts[other][0];
+    belts[other][0]--;
+}</declaration>
+		<location id="id0" x="238" y="-59">
+			<name x="212" y="-93">waiting</name>
+		</location>
+		<init ref="id0"/>
+		<transition id="id1">
+			<source ref="id0"/>
+			<target ref="id0"/>
+			<label kind="guard" x="330" y="-43">!belts[belt][pos+1] &amp;&amp; belts[other][0]</label>
+			<label kind="synchronisation" x="330" y="-26">tick_components?</label>
+			<label kind="assignment" x="330" y="-9">mergeBelts()</label>
+			<nail x="238" y="17"/>
+			<nail x="322" y="17"/>
+			<nail x="322" y="-59"/>
+		</transition>
+	</template>
+	<template>
+		<name>Station</name>
+		<parameter>const station_t id</parameter>
+		<declaration>clock x;
+bool error = false;
+int time_bound;
+
+belt_t input() {
+    return station_conf[CONFIG][id].input;
+}
+
+belt_t output() {
+    return station_conf[CONFIG][id].output;
+}
+
+pos_t length() {
+    return belt_conf[CONFIG][output()].length;
+}
+
+void processing_time() {
+    time_bound = fint(trunc(random_normal(station_conf[CONFIG][id].mean, sqrt(station_conf[CONFIG][id].variance))));
+    
+    if(time_bound &lt; 0) time_bound = 0;
+}
+
+bool detect_error() {
+    if (belts[output()][length()-1] == 2) {
+        error = true;
+        
+        return true;
+    }
+    
+    return false;
+}
+
+void offload() {
+    //decrease();
+    if (!detect_error())
+        belts[output()][length()-1]++;
+}
+
+void load() {
+    //increase();
+    
+    belts[input()][0]--;
+}</declaration>
+		<location id="id2" x="-841" y="-374">
+			<name x="-867" y="-408">waiting</name>
+		</location>
+		<location id="id3" x="-841" y="-154">
+			<name x="-960" y="-170">processing</name>
+			<label kind="invariant" x="-901" y="-136">x &lt;= time_bound</label>
+		</location>
+		<location id="id4" x="-518" y="-153">
+			<name x="-577" y="-136">processing_over</name>
+		</location>
+		<location id="id5" x="-519" y="-374">
+			<name x="-570" y="-408">update_sensor</name>
+			<committed/>
+		</location>
+		<init ref="id2"/>
+		<transition id="id6">
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="guard" x="-748" y="-178">x &gt;= time_bound</label>
+		</transition>
+		<transition id="id7">
+			<source ref="id5"/>
+			<target ref="id2"/>
+			<label kind="synchronisation" x="-722" y="-425">free[id]!</label>
+			<label kind="assignment" x="-722" y="-408">offload()</label>
+		</transition>
+		<transition id="id8">
+			<source ref="id4"/>
+			<target ref="id5"/>
+			<label kind="guard" x="-510" y="-289">!wait[output()]</label>
+			<label kind="synchronisation" x="-510" y="-272">move?</label>
+		</transition>
+		<transition id="id9">
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="guard" x="-833" y="-297">belts[input()][0]</label>
+			<label kind="synchronisation" x="-833" y="-280">tick_components?</label>
+			<label kind="assignment" x="-833" y="-263">x = 0, load(), processing_time()</label>
+		</transition>
+	</template>
+	<template>
+		<name>TailSensor</name>
+		<parameter>const tail_sensor_t id</parameter>
+		<declaration>belt_t belt() {
+    return tail_sensor_conf[CONFIG][id].belt;
+}
+
+pos_t pos() {
+    return tail_sensor_conf[CONFIG][id].pos;
+}
+
+error_t error() {
+    return tail_sensor_conf[CONFIG][id].error;
+}
+
+void update() {
+    wait[belt()] = belts[belt()][pos()];
+}
+
+void malfunction() {
+    wait[belt()] = !belts[belt()][pos()];
+}</declaration>
+		<location id="id10" x="-76" y="-76">
+			<name x="-102" y="-110">start</name>
+		</location>
+		<location id="id11" x="-76" y="93">
+			<committed/>
+		</location>
+		<location id="id12" x="-76" y="238">
+			<name x="-136" y="255">malfunctioning</name>
+		</location>
+		<location id="id13" x="170" y="93">
+			<name x="144" y="59">working</name>
+		</location>
+		<branchpoint id="id14" x="170" y="238"/>
+		<init ref="id10"/>
+		<transition id="id15">
+			<source ref="id13"/>
+			<target ref="id11"/>
+			<label kind="synchronisation" x="8" y="51">move?</label>
+			<label kind="assignment" x="8" y="68">update()</label>
+		</transition>
+		<transition id="id16">
+			<source ref="id12"/>
+			<target ref="id11"/>
+			<label kind="synchronisation" x="-68" y="178">move?</label>
+			<label kind="assignment" x="-68" y="195">malfunction()</label>
+		</transition>
+		<transition id="id17">
+			<source ref="id14"/>
+			<target ref="id13"/>
+			<label kind="probability" x="178" y="161">100 - error()</label>
+		</transition>
+		<transition id="id18">
+			<source ref="id14"/>
+			<target ref="id12"/>
+			<label kind="probability" x="34" y="246">error()</label>
+		</transition>
+		<transition id="id19" controllable="false">
+			<source ref="id11"/>
+			<target ref="id14"/>
+		</transition>
+		<transition id="id20">
+			<source ref="id10"/>
+			<target ref="id11"/>
+			<label kind="synchronisation" x="-68" y="-17">init_done?</label>
+			<label kind="assignment" x="-68" y="0">update()</label>
+		</transition>
+	</template>
+	<template>
+		<name>Flow</name>
+		<parameter>const belt_t belt, const pos_t pos, const belt_t other, const int policy</parameter>
+		<declaration>pos_t length() {
+    return belt_conf[CONFIG][other].length;
+}
+
+bool branch = false;
+
+// if error is true it's a deadlock situation
+bool error = false;
+
+bool detect_error() {
+    if (belts[other][length()-1] == 2) {
+        error = true;
+        
+        return true;
+    }
+    
+    return false;
+}
+
+void swap() {
+    if (!detect_error() &amp;&amp; !wait[other]) {
+        belts[belt][pos]--;
+        belts[other][length()-1]++; 
+    }
+}
+
+// POLICY SCHEDULE
+// 0 --&gt; Go to the free station
+// 1 --&gt; Keep flowing, do nothing
+// 2 --&gt; Switch every time
+// 3 --&gt; Round-robin
+
+void switchBelt() {
+    if (policy == 1) { return; }
+    
+    if (policy == 0 &amp;&amp; !gate[belt]) {
+        swap();
+    } else if (policy == 2){
+            swap();
+        }
+        else {
+            if (branch) {
+                swap();
+            }
+            
+            branch = !branch;
+        }
+}</declaration>
+		<location id="id21" x="-34" y="-68">
+			<name x="-68" y="-102">wait_piece</name>
+		</location>
+		<init ref="id21"/>
+		<transition id="id22">
+			<source ref="id21"/>
+			<target ref="id21"/>
+			<label kind="guard" x="76" y="-51">belts[belt][pos] &amp;&amp; !error</label>
+			<label kind="synchronisation" x="76" y="-34">tick_components?</label>
+			<label kind="assignment" x="76" y="-17">switchBelt()</label>
+			<nail x="-34" y="17"/>
+			<nail x="59" y="17"/>
+			<nail x="59" y="-68"/>
+		</transition>
+	</template>
+	<template>
+		<name>Belt</name>
+		<declaration>clock x;
+
+pos_t head(belt_t id) {
+    return belt_conf[CONFIG][id].head;
+}
+
+pos_t length(belt_t id) {
+    return belt_conf[CONFIG][id].length;
+}
+
+pos_t tail(belt_t id) {
+    return belt_conf[CONFIG][id].tail;
+}
+
+int max_queue(belt_t id) {
+    pos_t head = (head(id) == -1) ? 0 : head(id);
+    pos_t tail = (tail(id) == -1) ? length(id) : tail(id);
+
+    return tail-head + 1;
+}
+
+// I need two methods, one that updates from the first segment to the head sensor and one that updates everything else
+// this second method if the head is -1 needs to do nothing since the first method has already taken care of everything
+
+// One belt to rule them all... We need to change the move_belt function: iteratote on all belts to update them
+// Together with this change simplify the initializer... which can be merged with the Belt
+// When the clock reach BELT_SPEED send the tick_components signal and a single, broadcast move_belt
+
+void move_head(belt_t id) {
+    int i;
+    int limit = (head(id) == -1)?length(id):head(id);
+    
+    for (i = 1; i &lt; limit; i++) {
+        if (belts[id][i-1] == 0) {
+            belts[id][i-1] = belts[id][i];
+            belts[id][i] = 0;
+        }
+    }
+}
+
+void move_tail(belt_t id) {
+    int i;
+    
+    if (head(id) != -1) {
+        for (i = head(id)+1; i &lt; length(id); i++) {
+            if (belts[id][i-1] == 0) {
+                belts[id][i-1] = belts[id][i];
+                belts[id][i] = 0;
+            }
+        }
+    }
+}
+
+void move_gate(belt_t id) {
+    if (gate[id]) {
+        if (head(id) &gt; 0 &amp;&amp; belts[id][head(id)-1] == 0) {
+            belts[id][head(id)-1] = belts[id][head(id)];
+            belts[id][head(id)] = 0;
+        }
+    }
+}
+
+void move_belt() {
+
+    for(i : belt_t) {
+        move_head(i);
+        
+        move_gate(i);
+    
+        move_tail(i);
+    }
+}
+
+// return true when the gate is closed and no piece is between pos: 0 and head
+bool check_deadlock(belt_t id) {
+    int i;
+    int tot = 0;
+    
+    for ( i = 0; i &lt; belt_conf[CONFIG][id].head; i++)
+        tot += belts[id][i];
+        
+    return tot == 0 and !gate[id];
+}
+
+/*
+Old methods
+
+void update_count() {
+    int i, j;
+    int app = 0;
+    
+    for (i = 0; i &lt; BELTS; i++) {
+        for(j = 0; j &lt; belt_conf[i].length;j++) {
+            app += belts[i][j];
+        }
+    }
+    
+    pieces_on_belt = app;
+}
+
+void pop() {
+    belts[id][0] -= 1;
+}
+
+bool head_occupied() {
+    return belts[id][0];
+}
+
+void add_last() {
+    belts[id][length()-1] += 1;
+}
+*/</declaration>
+		<location id="id23" x="501" y="-59">
+			<name x="484" y="-93">start</name>
+		</location>
+		<location id="id24" x="280" y="-59">
+			<label kind="invariant" x="331" y="-42">x &lt;=BELT_SPEED</label>
+		</location>
+		<location id="id25" x="51" y="-59">
+			<committed/>
+		</location>
+		<init ref="id23"/>
+		<transition id="id26">
+			<source ref="id25"/>
+			<target ref="id24"/>
+			<label kind="synchronisation" x="110" y="-238">move!</label>
+			<label kind="assignment" x="110" y="-221">move_belt(),
+x = 0</label>
+			<nail x="51" y="-170"/>
+			<nail x="280" y="-170"/>
+		</transition>
+		<transition id="id27">
+			<source ref="id24"/>
+			<target ref="id25"/>
+			<label kind="guard" x="119" y="-51">x&gt;=BELT_SPEED</label>
+			<label kind="synchronisation" x="110" y="-34">tick_components!</label>
+		</transition>
+		<transition id="id28">
+			<source ref="id23"/>
+			<target ref="id24"/>
+			<label kind="synchronisation" x="348" y="-59">init_done?</label>
+		</transition>
+	</template>
+	<template>
+		<name>Initializer</name>
+		<declaration>void init_all() {
+    int i, j;
+    
+    for (i = 0; i &lt; BELTS; i++) {
+        if (belt_conf[CONFIG][i].head == -1) {
+            for (j = 0; j &lt; belt_conf[CONFIG][i].pieces; j++) {
+                belts[i][i] = 1;
+            }
+        }
+        else {
+            for (j = belt_conf[CONFIG][i].head; j &lt; belt_conf[CONFIG][i].pieces + belt_conf[CONFIG][i].head; j++) {
+                belts[i][j] = 1;
+            }
+        }
+        
+        //pieces_on_belt += belt_conf[i].pieces;
+    }
+    //total_pieces = pieces_on_belt;
+}
+
+</declaration>
+		<location id="id29" x="42" y="-42">
+			<name x="0" y="-76">init_over</name>
+		</location>
+		<location id="id30" x="-136" y="-42">
+			<name x="-170" y="-76">start</name>
+			<committed/>
+		</location>
+		<init ref="id30"/>
+		<transition id="id31">
+			<source ref="id30"/>
+			<target ref="id29"/>
+			<label kind="synchronisation" x="-93" y="-17">init_done!</label>
+			<label kind="assignment" x="-93" y="-34">init_all()</label>
+		</transition>
+	</template>
+	<template>
+		<name>HeadSensor</name>
+		<parameter>const head_sensor_t id</parameter>
+		<declaration>belt_t belt() {
+    return head_sensor_conf[CONFIG][id].belt;
+}
+
+pos_t pos() {
+    return head_sensor_conf[CONFIG][id].pos;
+}
+
+error_t error() {
+    return head_sensor_conf[CONFIG][id].error;
+}</declaration>
+		<location id="id32" x="408" y="-59">
+		</location>
+		<location id="id33" x="-93" y="-59">
+			<name x="-136" y="-42">triggered</name>
+			<committed/>
+		</location>
+		<location id="id34" x="-323" y="-59">
+			<name x="-348" y="-42">start</name>
+		</location>
+		<location id="id35" x="187" y="-161">
+		</location>
+		<location id="id36" x="178" y="42">
+		</location>
+		<branchpoint id="id37" x="68" y="-59"/>
+		<init ref="id34"/>
+		<transition id="id38">
+			<source ref="id36"/>
+			<target ref="id32"/>
+			<label kind="guard" x="289" y="-8">!belts[belt()][pos()]</label>
+			<label kind="synchronisation" x="289" y="9">move?</label>
+			<label kind="assignment" x="289" y="26">gate[belt()] = false</label>
+		</transition>
+		<transition id="id39">
+			<source ref="id35"/>
+			<target ref="id32"/>
+			<label kind="guard" x="280" y="-170">belts[belt()][pos()]</label>
+			<label kind="synchronisation" x="280" y="-153">move?</label>
+			<label kind="assignment" x="280" y="-136">gate[belt()] = false</label>
+		</transition>
+		<transition id="id40">
+			<source ref="id35"/>
+			<target ref="id33"/>
+			<label kind="guard" x="-51" y="-161">!belts[belt()][pos()]</label>
+			<label kind="synchronisation" x="-51" y="-144">move?</label>
+		</transition>
+		<transition id="id41">
+			<source ref="id36"/>
+			<target ref="id33"/>
+			<label kind="guard" x="-51" y="25">belts[belt()][pos()]</label>
+			<label kind="synchronisation" x="-51" y="42">move?</label>
+		</transition>
+		<transition id="id42">
+			<source ref="id37"/>
+			<target ref="id36"/>
+			<label kind="probability" x="144" y="-17">error()</label>
+		</transition>
+		<transition id="id43">
+			<source ref="id37"/>
+			<target ref="id35"/>
+			<label kind="probability" x="136" y="-110">100 - error()</label>
+		</transition>
+		<transition id="id44" controllable="false">
+			<source ref="id33"/>
+			<target ref="id37"/>
+		</transition>
+		<transition id="id45">
+			<source ref="id34"/>
+			<target ref="id33"/>
+			<label kind="synchronisation" x="-272" y="-102">init_done?</label>
+			<label kind="assignment" x="-272" y="-85">gate[belt()] = true</label>
+		</transition>
+		<transition id="id46">
+			<source ref="id32"/>
+			<target ref="id33"/>
+			<label kind="synchronisation" x="-59" y="-255">free[id]?</label>
+			<label kind="assignment" x="-59" y="-238">gate[belt()] = true</label>
+			<nail x="408" y="-204"/>
+			<nail x="-93" y="-204"/>
+		</transition>
+	</template>
+	<system>// Place template instantiations here.
+
+FlowController = Flow(2, 3, 3, POLICY_SCHEDULE);
+Merge = Merger(6, 4, 5);
+
+system Initializer, Belt, Station, FlowController, Merge, HeadSensor, TailSensor;
+</system>
+	<queries>
+		<query>
+			<formula>Pr [&lt;=10000] ([] Initializer.init_over imply not ((exists(i : station_t) Station(i).waiting and Belt.check_deadlock(Station(i).input())) or exists(j: station_t) Station(j).error or FlowController.error))</formula>
+			<comment>Eventually the system will incur in a deadlock state where, since the belt is no longer moving pieces, the stations start to load more than one piece onto the same segment or no station is fed with a new piece</comment>
+			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-07-10 14:44:50 +0200">
+				<details>≤ 0.0499441 (95% CI)</details>
+			</result>
+		</query>
+		<query>
+			<formula>Pr [&lt;=10000] ([] Initializer.init_over imply (sum(x : station_t) not Station(x).waiting) + (sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]?1:0) == sum(k : belt_t) belt_conf[k].pieces)</formula>
+			<comment>For all paths, once initilized, the pieces in the system remain the same, so no station is containing more than 1 piece and each segment has at most one piece</comment>
+			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-07-10 14:45:10 +0200">
+				<details>≤ 0.0499441 (95% CI)</details>
+			</result>
+		</query>
+		<query>
+			<formula>Pr [&lt;=10000] ([] Initializer.init_over imply forall(i : belt_t) forall(j : belt_pos_t) (0 &lt;= belts[i][j] and belts[i][j] &lt; 2))</formula>
+			<comment>For all paths the segments of the belt hold only one piece</comment>
+			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-07-10 14:45:29 +0200">
+				<details>≤ 0.0499441 (95% CI)</details>
+			</result>
+		</query>
+		<query>
+			<formula>Pr [&lt;=10000] ([] Initializer.init_over imply forall(i :  belt_t) ((sum(j : belt_pos_t) belts[i][j])&lt;=Belt.max_queue(i)))</formula>
+			<comment>For all paths the pieces on the belts are within the queue length once the system in initialized</comment>
+			<result outcome="success" type="interval" value="≤ 0.0499441 (95% CI)" timestamp="2023-07-10 14:45:36 +0200">
+				<details>≤ 0.0499441 (95% CI)</details>
+			</result>
+		</query>
+		<query>
+			<formula>Pr [&lt;=10000] ([] Initializer.init_over imply forall(i : station_t) not Station(i).waiting imply belts[Station(i).input()][0] == 0)</formula>
+			<comment>For all paths if station is processing no piece can reach it</comment>
+			<result outcome="success" type="quantity" value="0.432266 ± 0.0494479 (95% CI)" timestamp="2023-07-10 14:48:18 +0200">
+				<details>0.432266 ± 0.0494479 (95% CI)</details>
+			</result>
+		</query>
+		<query>
+			<formula>simulate [&lt;=1000] {
+sum(k : belt_t) belt_conf[CONFIG][k].pieces,
+sum(i : belt_t ) sum(j : belt_pos_t) belts[i][j]?1:0,
+sum(x : station_t) not Station(x).waiting
+
+}</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2023-07-17 14:55:47 +0200">
+				<plot title="Simulations (1)" xaxis="time" yaxis="value">
+					<series title="sum (k:(const (label belt_t:(range (int) &quot;0&quot; &quot;BELTS - 1&quot;)))) belt_conf[CONFIG][k].pieces" type="l" color="0xff0000" encoding="csv">0.0,12.0
+1000.0,12.0
+					</series>
+					<series title="sum (i:(const (label belt_t:(range (int) &quot;0&quot; &quot;BELTS - 1&quot;)))) sum (j:(const (label belt_pos_t:(range (int) &quot;0&quot; &quot;MAX_SLOTS - 1&quot;)))) belts[i][j] ? 1 : 0" type="l" color="0x00ff00" encoding="csv">0.0,0.0
+0.0,12.0
+24.0,12.0
+24.0,11.0
+30.0,11.0
+30.0,12.0
+54.0,12.0
+54.0,11.0
+66.0,11.0
+66.0,12.0
+90.0,12.0
+90.0,11.0
+96.0,11.0
+96.0,12.0
+120.0,12.0
+120.0,11.0
+126.0,11.0
+126.0,12.0
+150.0,12.0
+150.0,11.0
+162.0,11.0
+162.0,12.0
+186.0,12.0
+186.0,11.0
+210.0,11.0
+210.0,12.0
+234.0,12.0
+234.0,11.0
+240.0,11.0
+240.0,12.0
+264.0,12.0
+264.0,11.0
+270.0,11.0
+270.0,12.0
+294.0,12.0
+294.0,11.0
+306.0,11.0
+306.0,12.0
+330.0,12.0
+330.0,11.0
+342.0,11.0
+342.0,12.0
+366.0,12.0
+366.0,11.0
+378.0,11.0
+378.0,12.0
+402.0,12.0
+402.0,11.0
+414.0,11.0
+414.0,12.0
+1000.0,12.0
+					</series>
+					<series title="sum (x:(const (label station_t:(range (int) &quot;0&quot; &quot;STATIONS - 1&quot;)))) !Station[x].waiting" type="l" color="0x0000ff" encoding="csv">0.0,0.0
+24.0,0.0
+24.0,1.0
+30.0,1.0
+30.0,0.0
+54.0,0.0
+54.0,1.0
+66.0,1.0
+66.0,0.0
+90.0,0.0
+90.0,1.0
+96.0,1.0
+96.0,0.0
+120.0,0.0
+120.0,1.0
+126.0,1.0
+126.0,0.0
+150.0,0.0
+150.0,1.0
+162.0,1.0
+162.0,0.0
+186.0,0.0
+186.0,1.0
+210.0,1.0
+210.0,0.0
+234.0,0.0
+234.0,1.0
+240.0,1.0
+240.0,0.0
+264.0,0.0
+264.0,1.0
+270.0,1.0
+270.0,0.0
+294.0,0.0
+294.0,1.0
+306.0,1.0
+306.0,0.0
+330.0,0.0
+330.0,1.0
+342.0,1.0
+342.0,0.0
+366.0,0.0
+366.0,1.0
+378.0,1.0
+378.0,0.0
+402.0,0.0
+402.0,1.0
+414.0,1.0
+414.0,0.0
+1000.0,0.0
+					</series>
+					<comment/>
+				</plot>
+			</result>
+		</query>
+	</queries>
+</nta>
